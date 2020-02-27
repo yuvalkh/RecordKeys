@@ -20,9 +20,9 @@ namespace RecordNplay
         /// </summary>
         public delegate int keyboardHookProc(int code, int wParam, ref keyboardHookStruct lParam);
 
-        private List<String> keysHolding = new List<String>();
+        Stopwatch sw = Form1.sw;
 
-        Stopwatch sw;
+        private List<String> keysHolding = new List<String>();
 
         public struct keyboardHookStruct
         {
@@ -54,20 +54,29 @@ namespace RecordNplay
         #region Events
         void gkh_KeyUp(object sender, KeyEventArgs e)
         {
-            PressedKeyInfo keyInfo = Form1.writingChars.FindLast(x => check(x, e) as PressedKeyInfo));
+            /*PressedKeyInfo keyInfo = Form1.writingChars.FindLast(x => {
+                if (x is PressedKeyInfo)
+                {
+                    return ((PressedKeyInfo)x).keyCode == (byte)e.KeyValue;
+                }
+                return false;
+            });*/
+            PressedKeyInfo keyInfo = getLastOccurance(Form1.writingChars, (byte)e.KeyValue);
             keyInfo.duration = sw.ElapsedMilliseconds - keyInfo.startTime;
             Console.WriteLine("Up\t" + e.KeyCode.ToString());
             //e.Handled = true;
         }
 
-        
-        private bool check(Object x,KeyEventArgs e)
+        private PressedKeyInfo getLastOccurance(List<PressedInput> inputs, byte keyCode)
         {
-            if (x is PressedKeyInfo)
+            for (int i = inputs.Count - 1; i >= 0; i--)
             {
-                return ((PressedKeyInfo)x).keyCode == (byte)e.KeyValue;
+                if(inputs[i] is PressedKeyInfo && ((PressedKeyInfo)inputs[i]).keyCode == keyCode)
+                {
+                    return ((PressedKeyInfo)inputs[i]);
+                }
             }
-            return false;
+            return null;
         }
 
         void gkh_KeyDown(object sender, KeyEventArgs e)

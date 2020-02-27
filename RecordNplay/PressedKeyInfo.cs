@@ -6,17 +6,22 @@ using System.Threading.Tasks;
 
 namespace RecordNplay
 {
+    [Serializable]
     public class PressedKeyInfo : PressedInput
     {
         public byte keyCode;
         public long duration;
-        public long startTime;
 
         public PressedKeyInfo(byte keyCode, long duration, long startTime)
         {
             this.keyCode = keyCode;
             this.duration = duration;
             this.startTime = startTime;
+        }
+
+        public override string ToString()
+        {
+            return "Still not implemented !";
         }
     }
 }

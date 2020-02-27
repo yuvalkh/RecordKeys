@@ -8,6 +8,9 @@ namespace RecordNplay
 {
     public abstract class PressedInput
     {
+        public long startTime;
+
+        public override abstract string ToString();
 
     }
 }
