@@ -48,6 +48,7 @@ namespace RecordNplay
 
         private void button1_Click(object sender, EventArgs e)
         {
+            writingChars = new List<PressedInput>();
             sw.Start();
             MouseHook.Start();
             gkh.hook();
@@ -55,10 +56,10 @@ namespace RecordNplay
 
         private void button2_Click(object sender, EventArgs e)
         {
-            //sw.Stop();
             sw.Reset();
             MouseHook.stop();
             gkh.unhook();
+            showMacroSteps();
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -118,13 +119,18 @@ namespace RecordNplay
 
         private void DeleteButton_Click(object sender, EventArgs e)
         {
+            if(listBox1.SelectedItem != null)
+            {
+                File.Delete(listBox1.SelectedItem.ToString() + ".json");
+            }
             writingChars = new List<PressedInput>();
+            listBox2.Items.Clear();
         }
 
         private void SaveMacro_Click(object sender, EventArgs e)
         {
             String name = TextDialog.ShowDialog("Please enter name of save file", "WHAT IS THAT");
-            
+
             if (writingChars.Count < 1)
             {
                 MessageBox.Show("There is no macro to save");
@@ -133,6 +139,8 @@ namespace RecordNplay
             if (!name.Equals("") && name.All(x => char.IsLetterOrDigit(x) || char.IsWhiteSpace(x)))
             {
                 saveMacro(writingChars, name);
+                listBox1.Items.Add(name);
+                listBox1.SelectedIndex = listBox1.Items.Count - 1;
                 MessageBox.Show("Saved successfully!");
             }
             else
@@ -140,7 +148,7 @@ namespace RecordNplay
                 MessageBox.Show("There is a problem with the name of the file");
                 return;
             }
-            
+
         }
 
         private void LoadMacro_Click(object sender, EventArgs e)
@@ -177,17 +185,13 @@ namespace RecordNplay
             if (listBox1.SelectedItem != null)
             {
                 writingChars = loadMacro(listBox1.SelectedItem.ToString() + ".json");
-                listBox2.Items.Clear();
-                for (int i = 0; i < writingChars.Count; i++)
-                {
-                    listBox2.Items.Add(writingChars[i].ToString());
-                }
+                showMacroSteps();
             }
         }
 
-        private bool checkIfTimeIsValid(long newTime,int index)
+        private bool checkIfTimeIsValid(long newTime, int index)
         {
-            if(index > 0)
+            if (index > 0)
             {
                 return newTime > writingChars[index - 1].startTime;
             }
@@ -197,36 +201,243 @@ namespace RecordNplay
             }
         }
 
+        public void showMacroSteps()
+        {
+            listBox2.Items.Clear();
+            for (int i = 0; i < writingChars.Count; i++)
+            {
+                listBox2.Items.Add(writingChars[i].ToString());
+            }
+        }
+
         private void listBox2_DoubleClick(object sender, EventArgs e)
         {
             if (listBox2.SelectedItem != null)
             {
                 int currentIndex = listBox2.SelectedIndex;
-                long initialValue = writingChars[currentIndex].startTime;
-                long newValue;
-                String newValueInString = TextDialog.ShowEdit(writingChars[currentIndex].startTime.ToString(), "Enter time", "Edit");
-                if(!newValueInString.Equals("") && newValueInString.All(x => char.IsDigit(x)))
+                if (writingChars[currentIndex] is PressedKeyInfo)
                 {
-                    newValue = int.Parse(newValueInString);
-                    if (newValue != initialValue)
+                    PressedKeyInfo currentAsPKI = (PressedKeyInfo)writingChars[currentIndex];
+                    long initialDuration = currentAsPKI.duration;
+                    byte initialKeycode = currentAsPKI.keyCode;
+                    long initialStartTime = currentAsPKI.startTime;
+                    string[] newValuesArray = TextDialog.ShowKeyEdit(initialDuration.ToString(), ((Keys)initialKeycode).ToString(), initialStartTime.ToString());
+                    if (newValuesArray != null && long.Parse(newValuesArray[1]) > 0 && newValuesArray[1].All(x => char.IsDigit(x)))
                     {
-                        if(checkIfTimeIsValid(newValue, currentIndex))
+                        bool changed = false;
+                        TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
+                        Keys key = (Keys)converter.ConvertFromString(newValuesArray[0]);
+                        byte newKeycode = (byte)key;
+                        long newDuration = long.Parse(newValuesArray[1]);
+                        long newStartTime = long.Parse(newValuesArray[2]);
+                        if (newKeycode != initialKeycode)
                         {
-                            writingChars[currentIndex].startTime = newValue;
+                            changed = true;
+                            ((PressedKeyInfo)writingChars[currentIndex]).keyCode = newKeycode;
+                        }
+                        if (newDuration != initialDuration)
+                        {
+                            changed = true;
+                            ((PressedKeyInfo)writingChars[currentIndex]).duration = newDuration;
+                        }
+                        if (newStartTime != initialStartTime)
+                        {
+                            if (checkIfTimeIsValid(newStartTime, currentIndex))
+                            {
+                                changed = true;
+                                ((PressedKeyInfo)writingChars[currentIndex]).startTime = newStartTime;
+                            }
+                            else
+                            {
+                                MessageBox.Show("Time can't be less than 0 or lesser than previous step");
+                            }
+                        }
+                        if (changed)
+                        {
                             listBox2.Items.RemoveAt(currentIndex);
                             listBox2.Items.Insert(currentIndex, writingChars[currentIndex].ToString());
                         }
-                        else
+                    }
+                    else
+                    {
+                        if (newValuesArray != null)
                         {
-                            MessageBox.Show("Time can't be less than 0 or lesser than previous step");
+                            MessageBox.Show("Duration must be greater than 0 and digits only");
                         }
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Problem with the time entered");
+
+                    long initialValue = writingChars[currentIndex].startTime;
+                    long newValue;
+                    String newValueInString = TextDialog.ShowMouseEdit(writingChars[currentIndex].startTime.ToString(), "Enter time", "Edit");
+                    if (newValueInString != null && !newValueInString.Equals("") && newValueInString.All(x => char.IsDigit(x)))
+                    {
+                        newValue = int.Parse(newValueInString);
+                        if (newValue != initialValue)
+                        {
+                            if (checkIfTimeIsValid(newValue, currentIndex))
+                            {
+                                writingChars[currentIndex].startTime = newValue;
+                                listBox2.Items.RemoveAt(currentIndex);
+                                listBox2.Items.Insert(currentIndex, writingChars[currentIndex].ToString());
+                            }
+                            else
+                            {
+                                MessageBox.Show("Time can't be less than 0 or lesser than previous step");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if(newValueInString != null)
+                        {
+                            MessageBox.Show("Problem with the time entered");
+                        }
+                    }
                 }
             }
         }
-    }
+
+        private void DeleteStep_Click(object sender, EventArgs e)
+        {
+            if (listBox2.SelectedItem != null)
+            {
+                int currentIndex = listBox2.SelectedIndex;
+
+                if (writingChars[currentIndex] is PressedMouseInfo)
+                {
+                    PressedMouseInfo infoAsMouse = (PressedMouseInfo)writingChars[currentIndex];
+                    if (infoAsMouse.clickType == 0)//left Mouse Down
+                    {
+                        for (int i = currentIndex + 1; i < writingChars.Count; i++)
+                        {
+                            if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 1)
+                            {
+                                writingChars.RemoveAt(i);
+                                listBox2.Items.RemoveAt(i);
+
+                                writingChars.RemoveAt(currentIndex);
+                                listBox2.Items.RemoveAt(currentIndex);
+                                break;
+                            }
+                        }
+                    }
+                    else if (infoAsMouse.clickType == 1)//left Mouse Up
+                    {
+                        for (int i = currentIndex - 1; i >= 0; i--)
+                        {
+                            if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 0)
+                            {
+                                writingChars.RemoveAt(currentIndex);
+                                listBox2.Items.RemoveAt(currentIndex);
+
+                                writingChars.RemoveAt(i);
+                                listBox2.Items.RemoveAt(i);
+                                break;
+                            }
+                        }
+                    }
+                    else if (infoAsMouse.clickType == 2)//right Mouse Down
+                    {
+                        for (int i = currentIndex + 1; i < writingChars.Count; i++)
+                        {
+                            if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 3)
+                            {
+                                writingChars.RemoveAt(i);
+                                listBox2.Items.RemoveAt(i);
+
+                                writingChars.RemoveAt(currentIndex);
+                                listBox2.Items.RemoveAt(currentIndex);
+                                break;
+                            }
+                        }
+                    }
+                    else if (infoAsMouse.clickType == 3)//right Mouse Up
+                    {
+                        for (int i = currentIndex - 1; i >= 0; i--)
+                        {
+                            if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 2)
+                            {
+                                writingChars.RemoveAt(currentIndex);
+                                listBox2.Items.RemoveAt(currentIndex);
+
+                                writingChars.RemoveAt(i);
+                                listBox2.Items.RemoveAt(i);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    writingChars.RemoveAt(currentIndex);
+                    listBox2.Items.RemoveAt(currentIndex);
+                }
+            }
+        }
+
+        private void AddStep_Click(object sender, EventArgs e)
+        {
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        // The GetWindowThreadProcessId function retrieves the identifier of the thread
+        // that created the specified window and, optionally, the identifier of the
+        // process that created the window.
+        [DllImport("user32.dll")]
+        private static extern Int32 GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        // Returns the name of the process owning the foreground window.
+        private string GetForegroundProcessName()
+        {
+            IntPtr hwnd = GetForegroundWindow();
+
+            // The foreground window can be NULL in certain circumstances, 
+            // such as when a window is losing activation.
+            if (hwnd == null)
+                return "Unknown";
+
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+
+            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses())
+            {
+                if (p.Id == pid)
+                    return p.ProcessName;
+            }
+
+            return "Unknown";
+        }
+        [DllImport("User32.dll")]
+        static extern int SetForegroundWindow(IntPtr point);
+
+        public void testSendingToCurrentProcess()
+        {
+            Process p = Process.GetProcessesByName(GetForegroundProcessName()).FirstOrDefault();
+            if (p != null)
+            {
+                IntPtr h = p.MainWindowHandle;
+                SetForegroundWindow(h);
+                SendKeys.SendWait("k");
+            }
+        }
+}
 }

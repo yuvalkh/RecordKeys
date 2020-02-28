@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace RecordNplay
 {
@@ -21,7 +22,7 @@ namespace RecordNplay
 
         public override string ToString()
         {
-            return "Still not implemented !";
+            return "Pressed " + ((Keys)keyCode).ToString() + " for " + duration + " time at " + startTime;
         }
     }
 }
