@@ -62,21 +62,69 @@ namespace RecordNplay
             showMacroSteps();
         }
 
+        private bool mouseDown;
+        private Point lastLocation;
+        private Form countingForm;
+        private void countingForm_MouseDown(object sender, MouseEventArgs e)
+        {
+            mouseDown = true;
+            lastLocation = e.Location;
+        }
+
+        private void countingForm_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (mouseDown)
+            {
+                countingForm.Location = new Point(
+                    (countingForm.Location.X - lastLocation.X) + e.X, (countingForm.Location.Y - lastLocation.Y) + e.Y);
+
+                countingForm.Update();
+            }
+        }
+
+        private void countingForm_MouseUp(object sender, MouseEventArgs e)
+        {
+            mouseDown = false;
+        }
+
+        private async void countDownOnScreen(int amountOfSeconds)
+        {
+            Label countingText = new Label() { Left = 50, Top = 50, Text = amountOfSeconds.ToString(), Font = new Font(this.Font.FontFamily, 80), ForeColor = Color.Red, Width = 200, Height = 200 };
+            System.Windows.Forms.Timer countingTimer = new System.Windows.Forms.Timer() { Interval = 1000 };
+            countingTimer.Tick += (sender, e) => {countingText.Text = ((amountOfSeconds * 1000 - countingTimer.Interval)/1000).ToString(); countingForm.Refresh(); amountOfSeconds--; };
+            countingForm = new Form
+            {
+                TopMost = true,
+                FormBorderStyle = FormBorderStyle.None,
+                BackColor = Color.Magenta,
+                TransparencyKey = Color.Magenta,
+                StartPosition = FormStartPosition.CenterScreen,
+                Width = 500,
+                Height = 250
+            };
+            countingText.MouseDown += countingForm_MouseDown;
+            countingText.MouseMove += countingForm_MouseMove;
+            countingText.MouseUp += countingForm_MouseUp;
+            countingForm.Controls.Add(countingText);
+            countingForm.Show();
+            countingTimer.Start();
+            countingForm.Refresh();
+            while (amountOfSeconds > 0)
+            {
+                await Task.Delay(100);
+            }
+            countingForm.Close();
+        }
+
         private void button3_Click(object sender, EventArgs e)
         {
-            Thread.Sleep(2000);
+            Thread.Sleep(20000);
+            countDownOnScreen(5);
             for (int i = 0; i < writingChars.Count; i++)
             {
                 if (i == 0)
                 {
-                    if (writingChars[i] is PressedKeyInfo)
-                    {
-                        Thread.Sleep((int)((PressedKeyInfo)writingChars[i]).startTime);
-                    }
-                    else
-                    {
-                        Thread.Sleep((int)((PressedMouseInfo)writingChars[i]).startTime);
-                    }
+                    Thread.Sleep((int)writingChars[i].startTime);
                 }
                 else
                 {
@@ -119,7 +167,7 @@ namespace RecordNplay
 
         private void DeleteButton_Click(object sender, EventArgs e)
         {
-            if(listBox1.SelectedItem != null)
+            if (listBox1.SelectedItem != null)
             {
                 File.Delete(listBox1.SelectedItem.ToString() + ".json");
             }
@@ -291,7 +339,7 @@ namespace RecordNplay
                     }
                     else
                     {
-                        if(newValueInString != null)
+                        if (newValueInString != null)
                         {
                             MessageBox.Show("Problem with the time entered");
                         }
@@ -382,62 +430,5 @@ namespace RecordNplay
         {
 
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-
-        // The GetWindowThreadProcessId function retrieves the identifier of the thread
-        // that created the specified window and, optionally, the identifier of the
-        // process that created the window.
-        [DllImport("user32.dll")]
-        private static extern Int32 GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-        // Returns the name of the process owning the foreground window.
-        private string GetForegroundProcessName()
-        {
-            IntPtr hwnd = GetForegroundWindow();
-
-            // The foreground window can be NULL in certain circumstances, 
-            // such as when a window is losing activation.
-            if (hwnd == null)
-                return "Unknown";
-
-            uint pid;
-            GetWindowThreadProcessId(hwnd, out pid);
-
-            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses())
-            {
-                if (p.Id == pid)
-                    return p.ProcessName;
-            }
-
-            return "Unknown";
-        }
-        [DllImport("User32.dll")]
-        static extern int SetForegroundWindow(IntPtr point);
-
-        public void testSendingToCurrentProcess()
-        {
-            Process p = Process.GetProcessesByName(GetForegroundProcessName()).FirstOrDefault();
-            if (p != null)
-            {
-                IntPtr h = p.MainWindowHandle;
-                SetForegroundWindow(h);
-                SendKeys.SendWait("k");
-            }
-        }
-}
+    }
 }
