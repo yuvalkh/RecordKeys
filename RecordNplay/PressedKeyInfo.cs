@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -18,6 +19,14 @@ namespace RecordNplay
             this.keyCode = keyCode;
             this.duration = duration;
             this.startTime = startTime;
+        }
+
+        public override void activate()
+        {
+            new Thread(() =>
+            {
+                KeysWriter.holdKey(keyCode, (int)duration);
+            }).Start();
         }
 
         public override string ToString()

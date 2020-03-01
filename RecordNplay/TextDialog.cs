@@ -17,6 +17,7 @@ namespace RecordNplay
                 Height = 150,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = caption,
+                MaximizeBox = false,
                 StartPosition = FormStartPosition.CenterScreen
             };
             Label textLabel = new Label() { Left = 50, Top = 20, Text = text };
@@ -30,27 +31,52 @@ namespace RecordNplay
 
             return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
         }
-        public static string ShowMouseEdit(string initialValue,string text, string caption)
+        public static string[] ShowMouseEdit(int clickKind, string startTime,string x,string y)
         {
             Form prompt = new Form()
             {
                 Width = 400,
                 Height = 200,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = caption,
+                MaximizeBox = false,
+                Text = "Mouse",
                 StartPosition = FormStartPosition.CenterScreen
             };
-            Label textLabel = new Label() { Left = 50, Top = 20, Text = text };
-            TextBox textBox = new TextBox() { Left = 50, Top = 50, Width = 100 };
-            Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 70, DialogResult = DialogResult.OK };
-            textBox.Text = initialValue;
+            Label textLabel1 = new Label() { Left = 20, Top = 10, Text = "Click:",Width = 60};
+            ComboBox comboBox1 = new ComboBox() { Left = 100, Top = 10, Width = 150,DropDownStyle = ComboBoxStyle.DropDownList };
+            comboBox1.Items.Add("Right Click");
+            comboBox1.Items.Add("Left Click");
+            Label textLabel2 = new Label() { Left = 20, Top = 40, Text = "Time:", Width = 60 };
+            TextBox textBox2 = new TextBox() { Left = 100, Top = 40, Width = 150 };
+            Label textLabel3 = new Label() { Left = 20, Top = 70, Text = "X:", Width = 60 };
+            TextBox textBox3 = new TextBox() { Left = 100, Top = 70, Width = 150 };
+            Label textLabel4 = new Label() { Left = 20, Top = 100, Text = "Y:", Width = 60 };
+            TextBox textBox4 = new TextBox() { Left = 100, Top = 100, Width = 150 };
+            Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 150, Top = 130, DialogResult = DialogResult.OK };
+            if(clickKind == 0 || clickKind == 1)
+            {
+                comboBox1.Text = "Left Click";
+            }
+            else if(clickKind == 2 || clickKind == 3)
+            {
+                comboBox1.Text = "Right Click";
+            }
+            textBox2.Text = startTime;
+            textBox3.Text = x;
+            textBox4.Text = y;
             confirmation.Click += (sender, e) => { prompt.Close(); };
-            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(textLabel1);
+            prompt.Controls.Add(comboBox1);
+            prompt.Controls.Add(textLabel2);
+            prompt.Controls.Add(textBox2);
+            prompt.Controls.Add(textLabel3);
+            prompt.Controls.Add(textBox3);
+            prompt.Controls.Add(textLabel4);
+            prompt.Controls.Add(textBox4);
             prompt.Controls.Add(confirmation);
-            prompt.Controls.Add(textLabel);
             prompt.AcceptButton = confirmation;
 
-            return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : null;
+            return prompt.ShowDialog() == DialogResult.OK ? new string[] { comboBox1.Text, textBox2.Text,textBox3.Text,textBox4.Text} : null;
         }
         public static string[] ShowKeyEdit(string initialDuration, string initialKeyCode,string initialTime)
         {
@@ -60,6 +86,7 @@ namespace RecordNplay
                 Height = 180,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = "Edit Key",
+                MaximizeBox = false,
                 StartPosition = FormStartPosition.CenterScreen
             };
             Label textLabel1 = new Label() { Left = 20, Top = 10, Text = "Key:" };
@@ -96,6 +123,7 @@ namespace RecordNplay
                 Height = 130,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = "Edit Key",
+                MaximizeBox = false,
                 StartPosition = FormStartPosition.CenterScreen
             };
             prompt.KeyDown += (sender, args) =>

@@ -20,6 +20,27 @@ namespace RecordNplay
             this.y = y;
             this.startTime = startTime;
         }
+
+        public override void activate()
+        {
+            if (clickType == 0)
+            {
+                MouseClicker.pressLeftMouse(x, y);
+            }
+            else if (clickType == 1)
+            {
+                MouseClicker.leaveLeftMouse(x, y);
+            }
+            else if (clickType == 2)
+            {
+                MouseClicker.pressRightMouse(x, y);
+            }
+            else if (clickType == 3)
+            {
+                MouseClicker.leaveRighttMouse(x, y);
+            }
+        }
+
         public override string ToString()
         {
             if(clickType == 0)//leftClickDown

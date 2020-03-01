@@ -54,15 +54,18 @@ namespace RecordNplay
         #region Events
         void gkh_KeyUp(object sender, KeyEventArgs e)
         {
-            /*PressedKeyInfo keyInfo = Form1.writingChars.FindLast(x => {
-                if (x is PressedKeyInfo)
+            if (!Form1.running)
+            {
+                PressedKeyInfo keyInfo = getLastOccurance(Form1.writingChars, (byte)e.KeyValue);
+                keyInfo.duration = sw.ElapsedMilliseconds - keyInfo.startTime;
+            }
+            else
+            {
+                if((byte)e.KeyValue == 27)
                 {
-                    return ((PressedKeyInfo)x).keyCode == (byte)e.KeyValue;
+                    Form1.running = false;
                 }
-                return false;
-            });*/
-            PressedKeyInfo keyInfo = getLastOccurance(Form1.writingChars, (byte)e.KeyValue);
-            keyInfo.duration = sw.ElapsedMilliseconds - keyInfo.startTime;
+            }
             Console.WriteLine("Up\t" + e.KeyCode.ToString());
             //e.Handled = true;
         }
@@ -71,7 +74,7 @@ namespace RecordNplay
         {
             for (int i = inputs.Count - 1; i >= 0; i--)
             {
-                if(inputs[i] is PressedKeyInfo && ((PressedKeyInfo)inputs[i]).keyCode == keyCode)
+                if (inputs[i] is PressedKeyInfo && ((PressedKeyInfo)inputs[i]).keyCode == keyCode)
                 {
                     return ((PressedKeyInfo)inputs[i]);
                 }
@@ -81,7 +84,10 @@ namespace RecordNplay
 
         void gkh_KeyDown(object sender, KeyEventArgs e)
         {
-            Form1.writingChars.Add(new PressedKeyInfo((byte)e.KeyValue, 0, sw.ElapsedMilliseconds));
+            if (!Form1.running)
+            {
+                Form1.writingChars.Add(new PressedKeyInfo((byte)e.KeyValue, 0, sw.ElapsedMilliseconds));
+            }
             Console.WriteLine("Down\t" + e.KeyCode.ToString());
             //e.Handled = true;
         }
@@ -124,13 +130,13 @@ namespace RecordNplay
 
         public void hook()
         {
-            sw = new Stopwatch();
-            sw.Start();
-            if (callbackDelegate != null) throw new InvalidOperationException("Can't hook more than once");
+            if (callbackDelegate != null) return; //throw new InvalidOperationException("Can't hook more than once");
             IntPtr hInstance = LoadLibrary("User32");
             callbackDelegate = new keyboardHookProc(hookProc);
             hhook = SetWindowsHookEx(WH_KEYBOARD_LL, callbackDelegate, hInstance, 0);
             if (hhook == IntPtr.Zero) throw new Win32Exception();
+            sw = new Stopwatch();
+            sw.Start();
         }
 
         public void unhook()
@@ -166,8 +172,6 @@ namespace RecordNplay
             if (code >= 0)
             {
                 Keys key = (Keys)lParam.vkCode;
-                //if (HookedKeys.Contains(key))
-                //{
                 KeyEventArgs kea = new KeyEventArgs(key);
                 if ((wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) && (KeyDown != null))
                 {
@@ -176,13 +180,11 @@ namespace RecordNplay
                         keysHolding.Add(kea.KeyCode.ToString());
                         gkh_KeyDown(this, kea);
                     }
-                    //KeyDown(this, kea);
                 }
                 else if ((wParam == WM_KEYUP || wParam == WM_SYSKEYUP) && (KeyUp != null))
                 {
                     keysHolding.Remove(kea.KeyCode.ToString());
                     gkh_KeyUp(this, kea);
-                    //KeyUp(this, kea);
                 }
                 if (kea.Handled)
                     return 1;

@@ -36,10 +36,10 @@
             this.SaveMacro = new System.Windows.Forms.Button();
             this.LoadMacro = new System.Windows.Forms.Button();
             this.listBox1 = new System.Windows.Forms.ListBox();
-            this.listBox2 = new System.Windows.Forms.ListBox();
             this.label5 = new System.Windows.Forms.Label();
             this.DeleteStep = new System.Windows.Forms.Button();
             this.AddStep = new System.Windows.Forms.Button();
+            this.listView1 = new System.Windows.Forms.ListView();
             this.SuspendLayout();
             // 
             // label4
@@ -122,16 +122,6 @@
             this.listBox1.TabIndex = 10;
             this.listBox1.Click += new System.EventHandler(this.listBox1_Click);
             // 
-            // listBox2
-            // 
-            this.listBox2.FormattingEnabled = true;
-            this.listBox2.ItemHeight = 16;
-            this.listBox2.Location = new System.Drawing.Point(519, 73);
-            this.listBox2.Name = "listBox2";
-            this.listBox2.Size = new System.Drawing.Size(307, 324);
-            this.listBox2.TabIndex = 12;
-            this.listBox2.DoubleClick += new System.EventHandler(this.listBox2_DoubleClick);
-            // 
             // label5
             // 
             this.label5.AutoSize = true;
@@ -162,14 +152,23 @@
             this.AddStep.UseVisualStyleBackColor = true;
             this.AddStep.Click += new System.EventHandler(this.AddStep_Click);
             // 
+            // listView1
+            // 
+            this.listView1.Location = new System.Drawing.Point(519, 73);
+            this.listView1.Name = "listView1";
+            this.listView1.Size = new System.Drawing.Size(307, 324);
+            this.listView1.TabIndex = 15;
+            this.listView1.UseCompatibleStateImageBehavior = false;
+            this.listView1.DoubleClick += new System.EventHandler(this.listView1_DoubleClick);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(882, 464);
+            this.Controls.Add(this.listView1);
             this.Controls.Add(this.AddStep);
             this.Controls.Add(this.DeleteStep);
-            this.Controls.Add(this.listBox2);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.listBox1);
             this.Controls.Add(this.LoadMacro);
@@ -196,10 +195,10 @@
         private System.Windows.Forms.Button SaveMacro;
         private System.Windows.Forms.Button LoadMacro;
         private System.Windows.Forms.ListBox listBox1;
-        private System.Windows.Forms.ListBox listBox2;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Button DeleteStep;
         private System.Windows.Forms.Button AddStep;
+        private System.Windows.Forms.ListView listView1;
     }
 }
 

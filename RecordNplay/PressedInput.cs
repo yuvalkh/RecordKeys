@@ -10,6 +10,8 @@ namespace RecordNplay
     {
         public long startTime;
 
+        public abstract void activate();
+
         public override abstract string ToString();
 
     }

@@ -27,6 +27,11 @@ namespace RecordNplay
         public Form1()
         {
             InitializeComponent();
+            this.BackColor = Color.LightBlue;
+            this.listView1.View = View.Details;
+            this.listView1.HeaderStyle = ColumnHeaderStyle.None;
+            this.listView1.FullRowSelect = true;
+            this.listView1.Columns.Add("", -2);
             DirectoryInfo d = new DirectoryInfo(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
 
             foreach (var file in d.GetFiles("*.json"))
@@ -87,11 +92,11 @@ namespace RecordNplay
             mouseDown = false;
         }
 
-        private async void countDownOnScreen(int amountOfSeconds)
+        private async Task countDownOnScreen(int amountOfSeconds)
         {
             Label countingText = new Label() { Left = 50, Top = 50, Text = amountOfSeconds.ToString(), Font = new Font(this.Font.FontFamily, 80), ForeColor = Color.Red, Width = 200, Height = 200 };
             System.Windows.Forms.Timer countingTimer = new System.Windows.Forms.Timer() { Interval = 1000 };
-            countingTimer.Tick += (sender, e) => {countingText.Text = ((amountOfSeconds * 1000 - countingTimer.Interval)/1000).ToString(); countingForm.Refresh(); amountOfSeconds--; };
+            countingTimer.Tick += (sender, e) => { countingText.Text = ((amountOfSeconds * 1000 - countingTimer.Interval) / 1000).ToString(); countingForm.Refresh(); amountOfSeconds--; };
             countingForm = new Form
             {
                 TopMost = true,
@@ -116,53 +121,31 @@ namespace RecordNplay
             countingForm.Close();
         }
 
-        private void button3_Click(object sender, EventArgs e)
+        public static bool running = false;
+
+        private async void button3_Click(object sender, EventArgs e)
         {
-            Thread.Sleep(20000);
-            countDownOnScreen(5);
-            for (int i = 0; i < writingChars.Count; i++)
+            await countDownOnScreen(2);
+            gkh.hook();
+            running = true;
+            for (int i = 0; i < writingChars.Count && running; i++)
             {
                 if (i == 0)
                 {
-                    Thread.Sleep((int)writingChars[i].startTime);
+                    await Task.Delay((int)writingChars[i].startTime);
                 }
                 else
                 {
-                    Thread.Sleep((int)(writingChars[i].startTime - writingChars[i - 1].startTime));
+                    await Task.Delay((int)(writingChars[i].startTime - writingChars[i - 1].startTime));
                 }
-                if (writingChars[i] is PressedKeyInfo)
+                if (!running)
                 {
-                    byte tempKeyCode = ((PressedKeyInfo)writingChars[i]).keyCode;
-                    int tempDuration = (int)((PressedKeyInfo)writingChars[i]).duration;
-                    new Task(() =>
-                    {
-                        KeysWriter.holdKey(tempKeyCode, tempDuration);
-                    }).Start();
+                    break;
                 }
-                else//if it's a mouse
-                {
-                    int tempX = ((PressedMouseInfo)writingChars[i]).x;
-                    int tempY = ((PressedMouseInfo)writingChars[i]).y;
-                    byte clickType = ((PressedMouseInfo)writingChars[i]).clickType;
-                    if (clickType == 0)
-                    {
-                        MouseClicker.pressLeftMouse(tempX, tempY);
-                    }
-                    else if (clickType == 1)
-                    {
-                        MouseClicker.leaveLeftMouse(tempX, tempY);
-                    }
-                    else if (clickType == 2)
-                    {
-                        MouseClicker.pressRightMouse(tempX, tempY);
-
-                    }
-                    else if (clickType == 3)
-                    {
-                        MouseClicker.leaveRighttMouse(tempX, tempY);
-                    }
-                }
+                writingChars[i].activate();
             }
+            gkh.unhook();
+            running = false;
         }
 
         private void DeleteButton_Click(object sender, EventArgs e)
@@ -172,13 +155,12 @@ namespace RecordNplay
                 File.Delete(listBox1.SelectedItem.ToString() + ".json");
             }
             writingChars = new List<PressedInput>();
-            listBox2.Items.Clear();
+            listView1.Items.Clear();
         }
 
         private void SaveMacro_Click(object sender, EventArgs e)
         {
-            String name = TextDialog.ShowDialog("Please enter name of save file", "WHAT IS THAT");
-
+            String name = TextDialog.ShowDialog("Please enter name of save file", "Save");
             if (writingChars.Count < 1)
             {
                 MessageBox.Show("There is no macro to save");
@@ -201,7 +183,8 @@ namespace RecordNplay
 
         private void LoadMacro_Click(object sender, EventArgs e)
         {
-            writingChars = loadMacro("dsada");
+            //writingChars = loadMacro("dsada");
+            //listView1.Items[0].BackColor = Color.Aqua;
         }
 
         private List<PressedInput> loadMacro(String fileName)
@@ -241,7 +224,23 @@ namespace RecordNplay
         {
             if (index > 0)
             {
-                return newTime > writingChars[index - 1].startTime;
+                if (writingChars[index] is PressedKeyInfo)
+                {
+                    return newTime > writingChars[index - 1].startTime;
+                }
+                else
+                {
+                    int clickType = ((PressedMouseInfo)writingChars[index]).clickType;
+                    int coupleIndex = getIndexOfCoupleClick(index, clickType);
+                    if (clickType == 0 || clickType == 2)//start clicking
+                    {
+                        return newTime < writingChars[coupleIndex].startTime;
+                    }
+                    else//released click
+                    {
+                        return newTime > writingChars[coupleIndex].startTime;
+                    }
+                }
             }
             else
             {
@@ -251,18 +250,18 @@ namespace RecordNplay
 
         public void showMacroSteps()
         {
-            listBox2.Items.Clear();
+            listView1.Items.Clear();
             for (int i = 0; i < writingChars.Count; i++)
             {
-                listBox2.Items.Add(writingChars[i].ToString());
+                listView1.Items.Add(writingChars[i].ToString());
             }
         }
 
-        private void listBox2_DoubleClick(object sender, EventArgs e)
+        private void listView1_DoubleClick(object sender, EventArgs e)
         {
-            if (listBox2.SelectedItem != null)
+            if (listView1.SelectedItems.Count == 1)
             {
-                int currentIndex = listBox2.SelectedIndex;
+                int currentIndex = listView1.SelectedIndices[0];
                 if (writingChars[currentIndex] is PressedKeyInfo)
                 {
                     PressedKeyInfo currentAsPKI = (PressedKeyInfo)writingChars[currentIndex];
@@ -302,8 +301,8 @@ namespace RecordNplay
                         }
                         if (changed)
                         {
-                            listBox2.Items.RemoveAt(currentIndex);
-                            listBox2.Items.Insert(currentIndex, writingChars[currentIndex].ToString());
+                            listView1.Items.RemoveAt(currentIndex);
+                            listView1.Items.Insert(currentIndex, writingChars[currentIndex].ToString());
                         }
                     }
                     else
@@ -316,25 +315,71 @@ namespace RecordNplay
                 }
                 else
                 {
-
-                    long initialValue = writingChars[currentIndex].startTime;
-                    long newValue;
-                    String newValueInString = TextDialog.ShowMouseEdit(writingChars[currentIndex].startTime.ToString(), "Enter time", "Edit");
-                    if (newValueInString != null && !newValueInString.Equals("") && newValueInString.All(x => char.IsDigit(x)))
+                    PressedMouseInfo infoAsMouse = ((PressedMouseInfo)writingChars[currentIndex]);
+                    long initialStartTime = writingChars[currentIndex].startTime;
+                    long newStartTime;
+                    string initialClickType;
+                    string newClickType;
+                    int initialX = infoAsMouse.x;
+                    int newX;
+                    int initialY = infoAsMouse.y;
+                    int newY;
+                    if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
                     {
-                        newValue = int.Parse(newValueInString);
-                        if (newValue != initialValue)
+                        initialClickType = "Right Click";
+                    }
+                    else
+                    {
+                        initialClickType = "Left Click";
+                    }
+                    string[] newValueInString = TextDialog.ShowMouseEdit(infoAsMouse.clickType, infoAsMouse.startTime.ToString(), initialX.ToString(), initialY.ToString());
+                    if (newValueInString != null && !newValueInString[0].Equals("") && !newValueInString[0].Equals("") && newValueInString[1].All(x => char.IsDigit(x)) && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)))
+                    {
+                        bool changed = false;
+                        //clickType
+                        ////////////////////////////////////////////////////
+                        newClickType = newValueInString[0];
+                        newStartTime = int.Parse(newValueInString[1]);
+                        newX = int.Parse(newValueInString[2]);
+                        newY = int.Parse(newValueInString[3]);
+                        if (newStartTime != initialStartTime && checkIfTimeIsValid(newStartTime, currentIndex))
                         {
-                            if (checkIfTimeIsValid(newValue, currentIndex))
+                            writingChars[currentIndex].startTime = newStartTime;
+                            changed = true;
+                        }
+                        if (!initialClickType.Equals(newClickType))
+                        {
+                            changed = true;
+                            int coupleIndex = getIndexOfCoupleClick(currentIndex, infoAsMouse.clickType);
+                            if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
                             {
-                                writingChars[currentIndex].startTime = newValue;
-                                listBox2.Items.RemoveAt(currentIndex);
-                                listBox2.Items.Insert(currentIndex, writingChars[currentIndex].ToString());
+                                infoAsMouse.clickType -= 2;
+                                ((PressedMouseInfo)writingChars[coupleIndex]).clickType -= 2;
+                                listView1.Items.RemoveAt(coupleIndex);
+                                listView1.Items.Insert(coupleIndex, writingChars[coupleIndex].ToString());
                             }
                             else
                             {
-                                MessageBox.Show("Time can't be less than 0 or lesser than previous step");
+                                infoAsMouse.clickType += 2;
+                                ((PressedMouseInfo)writingChars[coupleIndex]).clickType += 2;
+                                listView1.Items.RemoveAt(coupleIndex);
+                                listView1.Items.Insert(coupleIndex, writingChars[coupleIndex].ToString());
                             }
+                        }
+                        if (initialX != newX)
+                        {
+                            infoAsMouse.x = newX;
+                            changed = true;
+                        }
+                        if (initialY != newY)
+                        {
+                            infoAsMouse.y = newY;
+                            changed = true;
+                        }
+                        if (changed)
+                        {
+                            listView1.Items.RemoveAt(currentIndex);
+                            listView1.Items.Insert(currentIndex, writingChars[currentIndex].ToString());
                         }
                     }
                     else
@@ -350,80 +395,85 @@ namespace RecordNplay
 
         private void DeleteStep_Click(object sender, EventArgs e)
         {
-            if (listBox2.SelectedItem != null)
+            if (listView1.SelectedItems.Count == 1)
             {
-                int currentIndex = listBox2.SelectedIndex;
-
-                if (writingChars[currentIndex] is PressedMouseInfo)
+                int currentIndex = listView1.SelectedIndices[0];
+                if (writingChars[currentIndex] is PressedKeyInfo)
                 {
-                    PressedMouseInfo infoAsMouse = (PressedMouseInfo)writingChars[currentIndex];
-                    if (infoAsMouse.clickType == 0)//left Mouse Down
-                    {
-                        for (int i = currentIndex + 1; i < writingChars.Count; i++)
-                        {
-                            if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 1)
-                            {
-                                writingChars.RemoveAt(i);
-                                listBox2.Items.RemoveAt(i);
-
-                                writingChars.RemoveAt(currentIndex);
-                                listBox2.Items.RemoveAt(currentIndex);
-                                break;
-                            }
-                        }
-                    }
-                    else if (infoAsMouse.clickType == 1)//left Mouse Up
-                    {
-                        for (int i = currentIndex - 1; i >= 0; i--)
-                        {
-                            if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 0)
-                            {
-                                writingChars.RemoveAt(currentIndex);
-                                listBox2.Items.RemoveAt(currentIndex);
-
-                                writingChars.RemoveAt(i);
-                                listBox2.Items.RemoveAt(i);
-                                break;
-                            }
-                        }
-                    }
-                    else if (infoAsMouse.clickType == 2)//right Mouse Down
-                    {
-                        for (int i = currentIndex + 1; i < writingChars.Count; i++)
-                        {
-                            if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 3)
-                            {
-                                writingChars.RemoveAt(i);
-                                listBox2.Items.RemoveAt(i);
-
-                                writingChars.RemoveAt(currentIndex);
-                                listBox2.Items.RemoveAt(currentIndex);
-                                break;
-                            }
-                        }
-                    }
-                    else if (infoAsMouse.clickType == 3)//right Mouse Up
-                    {
-                        for (int i = currentIndex - 1; i >= 0; i--)
-                        {
-                            if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 2)
-                            {
-                                writingChars.RemoveAt(currentIndex);
-                                listBox2.Items.RemoveAt(currentIndex);
-
-                                writingChars.RemoveAt(i);
-                                listBox2.Items.RemoveAt(i);
-                                break;
-                            }
-                        }
-                    }
+                    writingChars.RemoveAt(currentIndex);
+                    listView1.Items.RemoveAt(currentIndex);
                 }
                 else
                 {
-                    writingChars.RemoveAt(currentIndex);
-                    listBox2.Items.RemoveAt(currentIndex);
+                    int coupleIndex = getIndexOfCoupleClick(currentIndex, ((PressedMouseInfo)writingChars[currentIndex]).clickType);
+                    if (coupleIndex > currentIndex)//mouse down
+                    {
+                        writingChars.RemoveAt(coupleIndex);
+                        listView1.Items.RemoveAt(coupleIndex);
+
+                        writingChars.RemoveAt(currentIndex);
+                        listView1.Items.RemoveAt(currentIndex);
+                    }
+                    else//mouse up
+                    {
+                        writingChars.RemoveAt(currentIndex);
+                        listView1.Items.RemoveAt(currentIndex);
+
+                        writingChars.RemoveAt(coupleIndex);
+                        listView1.Items.RemoveAt(coupleIndex);
+                    }
                 }
             }
+        }
+
+        private int getIndexOfCoupleClick(int currentIndex, int clickType)
+        {
+
+            if (writingChars[currentIndex] is PressedMouseInfo)
+            {
+                PressedMouseInfo infoAsMouse = (PressedMouseInfo)writingChars[currentIndex];
+                if (infoAsMouse.clickType == 0)//left Mouse Down
+                {
+                    for (int i = currentIndex + 1; i < writingChars.Count; i++)
+                    {
+                        if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 1)
+                        {
+                            return i;
+                        }
+                    }
+                }
+                else if (infoAsMouse.clickType == 1)//left Mouse Up
+                {
+                    for (int i = currentIndex - 1; i >= 0; i--)
+                    {
+                        if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 0)
+                        {
+                            return i;
+                        }
+                    }
+                }
+                else if (infoAsMouse.clickType == 2)//right Mouse Down
+                {
+                    for (int i = currentIndex + 1; i < writingChars.Count; i++)
+                    {
+                        if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 3)
+                        {
+                            return i;
+                        }
+                    }
+                }
+                else if (infoAsMouse.clickType == 3)//right Mouse Up
+                {
+                    for (int i = currentIndex - 1; i >= 0; i--)
+                    {
+                        if (writingChars[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 2)
+                        {
+                            return i;
+                        }
+                    }
+                }
+            }
+            return -1;
         }
 
         private void AddStep_Click(object sender, EventArgs e)
