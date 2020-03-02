@@ -42,10 +42,15 @@ namespace RecordNplay
                 Text = "Mouse",
                 StartPosition = FormStartPosition.CenterScreen
             };
+            
+            Label showX = new Label() { Left = 250, Top = 70 };
+            Label showY = new Label() { Left = 250, Top = 100 };
+            Timer timerChangingCursorLabel = new Timer() { Enabled = true, Interval = 1 };
+            timerChangingCursorLabel.Tick += (sender, e) => { showX.Text = "currentX:" + Cursor.Position.X; showY.Text = "currentY:" + Cursor.Position.Y; };
             Label textLabel1 = new Label() { Left = 20, Top = 10, Text = "Click:",Width = 60};
             ComboBox comboBox1 = new ComboBox() { Left = 100, Top = 10, Width = 150,DropDownStyle = ComboBoxStyle.DropDownList };
-            comboBox1.Items.Add("Right Click");
             comboBox1.Items.Add("Left Click");
+            comboBox1.Items.Add("Right Click");
             Label textLabel2 = new Label() { Left = 20, Top = 40, Text = "Time:", Width = 60 };
             TextBox textBox2 = new TextBox() { Left = 100, Top = 40, Width = 150 };
             Label textLabel3 = new Label() { Left = 20, Top = 70, Text = "X:", Width = 60 };
@@ -73,6 +78,8 @@ namespace RecordNplay
             prompt.Controls.Add(textBox3);
             prompt.Controls.Add(textLabel4);
             prompt.Controls.Add(textBox4);
+            prompt.Controls.Add(showX);
+            prompt.Controls.Add(showY);
             prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
 
@@ -124,6 +131,7 @@ namespace RecordNplay
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = "Edit Key",
                 MaximizeBox = false,
+                MinimizeBox = false,
                 StartPosition = FormStartPosition.CenterScreen
             };
             prompt.KeyDown += (sender, args) =>
@@ -136,5 +144,51 @@ namespace RecordNplay
             prompt.ShowDialog();
             return returnedString;
         }
+        private static string showChooseKeyOrMouse()
+        {
+            string returnedString = null;
+            Form prompt = new Form()
+            {
+                Width = 280,
+                Height = 100,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Edit Key",
+                MaximizeBox = false,
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            Button MouseButton = new Button() { Left = 20, Top = 10, Text = "Mouse Action",Width = 100};
+            Button KeyButton = new Button() { Left = 140, Top = 10, Text = "Key Action", Width = 100};
+            MouseButton.Click += (sender, args) =>
+            {
+                returnedString = "Mouse";
+                prompt.Close();
+            };
+            KeyButton.Click += (sender, args) =>
+            {
+                returnedString = "Key";
+                prompt.Close();
+            };
+            prompt.Controls.Add(MouseButton);
+            prompt.Controls.Add(KeyButton);
+            prompt.ShowDialog();
+            return returnedString;
+        }
+        public static string[] ShowAdd()
+        {
+            string choose = showChooseKeyOrMouse();
+            if(choose != null)
+            {
+                if (choose.Equals("Mouse"))
+                {
+                    return ShowMouseEdit(0, "", "", "");
+                }
+                else//it's a key
+                {
+                    return ShowKeyEdit("", "", "");
+                }
+            }
+            return null;
+        }
+
     }
 }

@@ -20,8 +20,19 @@ namespace RecordNplay
             sim.Keyboard.KeyDown((VirtualKeyCode)keyCode);
             //sim.Keyboard.Sleep(duration);
             Thread.Sleep(duration);
+            //await waitWithInterrupt(duration);
             sim.Keyboard.KeyUp((VirtualKeyCode)keyCode);
             Console.WriteLine("Wrote the letter:" + (char)keyCode);
+        }
+        private static async Task waitWithInterrupt(int amountOfSeconds)
+        {
+            int numOfWaited = 0;
+            Console.WriteLine("Hello");
+            if (numOfWaited < amountOfSeconds && Form1.running)
+            {
+                await Task.Delay(1);
+                numOfWaited++;
+            }
         }
 
         /*const int PauseBetweenStrokes = 50;

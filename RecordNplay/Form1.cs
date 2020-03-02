@@ -21,12 +21,13 @@ namespace RecordNplay
     {
         public static int totalTime = 0;
         public static Stopwatch sw = new Stopwatch();
-        globalKeyboardHook gkh = new globalKeyboardHook();
+        globalKeyboardHook gkh;
         public static List<PressedInput> writingChars = new List<PressedInput>();
 
         public Form1()
         {
             InitializeComponent();
+            gkh = new globalKeyboardHook(this);
             this.BackColor = Color.LightBlue;
             this.listView1.View = View.Details;
             this.listView1.HeaderStyle = ColumnHeaderStyle.None;
@@ -39,6 +40,7 @@ namespace RecordNplay
                 //Directory.Move(file.FullName, filepath + "\\TextFiles\\" + file.Name);
                 listBox1.Items.Add(file.Name.Substring(0, file.Name.Length - 5));
             }
+            gkh.hook();
         }
 
         private void loadViewedMacros()
@@ -48,22 +50,28 @@ namespace RecordNplay
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            comboBox1.Items.Add("None");
+            for (int i = 1; i <= 12; i++)
+            {
+                comboBox1.Items.Add("F" + i);
+            }
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
+            recording = true;
             writingChars = new List<PressedInput>();
             sw.Start();
             MouseHook.Start();
-            gkh.hook();
+            //gkh.hook();
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
+            recording = false;
             sw.Reset();
             MouseHook.stop();
-            gkh.unhook();
+            //gkh.unhook();
             showMacroSteps();
         }
 
@@ -123,10 +131,12 @@ namespace RecordNplay
 
         public static bool running = false;
 
-        private async void button3_Click(object sender, EventArgs e)
+        public static bool recording = false;
+
+        public async void runMacro()
         {
-            await countDownOnScreen(2);
-            gkh.hook();
+            sw.Reset();
+            sw.Start();
             running = true;
             for (int i = 0; i < writingChars.Count && running; i++)
             {
@@ -144,8 +154,13 @@ namespace RecordNplay
                 }
                 writingChars[i].activate();
             }
-            gkh.unhook();
             running = false;
+        }
+
+        private async void button3_Click(object sender, EventArgs e)
+        {
+            await countDownOnScreen(2);
+            runMacro();
         }
 
         private void DeleteButton_Click(object sender, EventArgs e)
@@ -271,6 +286,7 @@ namespace RecordNplay
                     string[] newValuesArray = TextDialog.ShowKeyEdit(initialDuration.ToString(), ((Keys)initialKeycode).ToString(), initialStartTime.ToString());
                     if (newValuesArray != null && long.Parse(newValuesArray[1]) > 0 && newValuesArray[1].All(x => char.IsDigit(x)))
                     {
+                        int newIndexToInsert = -1;
                         bool changed = false;
                         TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
                         Keys key = (Keys)converter.ConvertFromString(newValuesArray[0]);
@@ -280,29 +296,57 @@ namespace RecordNplay
                         if (newKeycode != initialKeycode)
                         {
                             changed = true;
-                            ((PressedKeyInfo)writingChars[currentIndex]).keyCode = newKeycode;
+                            currentAsPKI.keyCode = newKeycode;
                         }
                         if (newDuration != initialDuration)
                         {
                             changed = true;
-                            ((PressedKeyInfo)writingChars[currentIndex]).duration = newDuration;
+                            currentAsPKI.duration = newDuration;
                         }
                         if (newStartTime != initialStartTime)
                         {
-                            if (checkIfTimeIsValid(newStartTime, currentIndex))
+                            if (newStartTime >= 0)
                             {
                                 changed = true;
-                                ((PressedKeyInfo)writingChars[currentIndex]).startTime = newStartTime;
+                                newIndexToInsert = findIndexOfInsert(newStartTime);
+                                currentAsPKI.startTime = newStartTime;
+                                if (newStartTime > initialStartTime)
+                                {
+                                    writingChars.Insert(newIndexToInsert, currentAsPKI);
+                                    writingChars.RemoveAt(currentIndex);
+                                }
+                                else
+                                {
+                                    writingChars.RemoveAt(currentIndex);
+                                    writingChars.Insert(newIndexToInsert, currentAsPKI);
+                                }
+
                             }
                             else
                             {
-                                MessageBox.Show("Time can't be less than 0 or lesser than previous step");
+                                MessageBox.Show("Time can't be less than 0");
                             }
                         }
                         if (changed)
                         {
-                            listView1.Items.RemoveAt(currentIndex);
-                            listView1.Items.Insert(currentIndex, writingChars[currentIndex].ToString());
+                            if (newIndexToInsert != -1)
+                            {
+                                if (newStartTime > initialStartTime)
+                                {
+                                    listView1.Items.Insert(newIndexToInsert, currentAsPKI.ToString());
+                                    listView1.Items.RemoveAt(currentIndex);
+                                }
+                                else
+                                {
+                                    listView1.Items.RemoveAt(currentIndex);
+                                    listView1.Items.Insert(newIndexToInsert, currentAsPKI.ToString());
+                                }
+                            }
+                            else
+                            {
+                                listView1.Items.RemoveAt(currentIndex);
+                                listView1.Items.Insert(currentIndex, writingChars[currentIndex].ToString());
+                            }
                         }
                     }
                     else
@@ -391,6 +435,7 @@ namespace RecordNplay
                     }
                 }
             }
+            listView1.Refresh();
         }
 
         private void DeleteStep_Click(object sender, EventArgs e)
@@ -478,7 +523,63 @@ namespace RecordNplay
 
         private void AddStep_Click(object sender, EventArgs e)
         {
+            string[] info = TextDialog.ShowAdd();
+            if (info != null)
+            {
+                if (info.Count() == 3)//it's keyboard
+                {
+                    TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
+                    Keys key = (Keys)converter.ConvertFromString(info[0]);
+                    byte newKeycode = (byte)key;
+                    int insertIndex = findIndexOfInsert(int.Parse(info[2]));
+                    writingChars.Insert(insertIndex, new PressedKeyInfo(newKeycode, long.Parse(info[1]), long.Parse(info[2])));
+                    listView1.Items.Insert(insertIndex, writingChars[insertIndex].ToString());
+                }
+                else//it's a mouse
+                {
+                    byte clickType;
+                    if(info[0].Equals("Left Click"))
+                    {
+                        clickType = 0;
+                    }
+                    else//right click
+                    {
+                        clickType = 2;
+                    }
+                    int startTime = int.Parse(info[1]);
+                    int x = int.Parse(info[2]);
+                    int y = int.Parse(info[3]);
+                    int insertIndex = findIndexOfInsert(startTime);
+                    writingChars.Insert(insertIndex, new PressedMouseInfo(clickType,x,y,startTime));
+                    listView1.Items.Insert(insertIndex, writingChars[insertIndex].ToString());
+                    insertIndex = findIndexOfInsert(startTime + 100);
+                    writingChars.Insert(insertIndex, new PressedMouseInfo(++clickType, x, y, startTime + 100));
+                    listView1.Items.Insert(insertIndex, writingChars[insertIndex].ToString());
+                }
+                listView1.Refresh();
+            }
+        }
 
+        public static int findIndexOfInsert(long startTime)
+        {
+            int index = 0;
+            for (int i = 0; i < writingChars.Count; i++)
+            {
+                index = i;
+                if (startTime < writingChars[i].startTime)
+                {
+                    break;
+                }
+                else
+                {
+                    if(i == writingChars.Count - 1)
+                    {
+                        index++;
+                        break;
+                    }
+                }
+            }
+            return index;
         }
     }
 }

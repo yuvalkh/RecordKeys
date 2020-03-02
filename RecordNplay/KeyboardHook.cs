@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace RecordNplay
 {
@@ -19,6 +20,8 @@ namespace RecordNplay
         /// defines the callback type for the hook
         /// </summary>
         public delegate int keyboardHookProc(int code, int wParam, ref keyboardHookStruct lParam);
+
+        public Form1 form1;
 
         Stopwatch sw = Form1.sw;
 
@@ -56,8 +59,24 @@ namespace RecordNplay
         {
             if (!Form1.running)
             {
-                PressedKeyInfo keyInfo = getLastOccurance(Form1.writingChars, (byte)e.KeyValue);
-                keyInfo.duration = sw.ElapsedMilliseconds - keyInfo.startTime;
+                if (Form1.recording)
+                {
+                    PressedKeyInfo keyInfo = getLastOccurance(Form1.writingChars, (byte)e.KeyValue);
+                    if (keyInfo != null)
+                    {
+                        keyInfo.duration = sw.ElapsedMilliseconds - keyInfo.startTime;
+                    }
+                }
+                else//To start the macro
+                {
+                    if(form1.comboBox1.Text.Equals(e.KeyCode.ToString()))
+                    {
+                        new Thread(() =>
+                        {
+                            form1.runMacro();
+                        }).Start(); 
+                    }
+                }
             }
             else
             {
@@ -105,8 +124,9 @@ namespace RecordNplay
         /// <summary>
         /// Initializes a new instance of the <see cref="globalKeyboardHook"/> class and installs the keyboard hook.
         /// </summary>
-        public globalKeyboardHook()
+        public globalKeyboardHook(Form1 form)
         {
+            form1 = form;
             KeyDown += new KeyEventHandler(gkh_KeyDown);
             KeyUp += new KeyEventHandler(gkh_KeyUp);
             //hook();
