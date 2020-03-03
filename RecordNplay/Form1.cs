@@ -27,6 +27,7 @@ namespace RecordNplay
         public Form1()
         {
             InitializeComponent();
+            comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             gkh = new globalKeyboardHook(this);
             this.BackColor = Color.LightBlue;
             this.listView1.View = View.Details;
@@ -61,6 +62,7 @@ namespace RecordNplay
         {
             recording = true;
             writingChars = new List<PressedInput>();
+            sw.Reset();
             sw.Start();
             MouseHook.Start();
             //gkh.hook();
@@ -68,11 +70,14 @@ namespace RecordNplay
 
         private void button2_Click(object sender, EventArgs e)
         {
-            recording = false;
-            sw.Reset();
-            MouseHook.stop();
-            //gkh.unhook();
-            showMacroSteps();
+            if (recording)
+            {
+                recording = false;
+                sw.Reset();
+                MouseHook.stop();
+                //gkh.unhook();
+                showMacroSteps();
+            }
         }
 
         private bool mouseDown;
@@ -135,24 +140,54 @@ namespace RecordNplay
 
         public async void runMacro()
         {
-            sw.Reset();
-            sw.Start();
-            running = true;
-            for (int i = 0; i < writingChars.Count && running; i++)
+            long numOfLoops;
+            try
             {
-                if (i == 0)
+                numOfLoops = long.Parse(textBox1.Text);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("There is a prolem with number of loops");
+                return;
+            }
+            if (numOfLoops < 0)
+            {
+                if (numOfLoops == -1)
                 {
-                    await Task.Delay((int)writingChars[i].startTime);
+                    numOfLoops = long.MaxValue;
                 }
                 else
                 {
-                    await Task.Delay((int)(writingChars[i].startTime - writingChars[i - 1].startTime));
+                    MessageBox.Show("number of loops can't be negative");
+                    return;
                 }
-                if (!running)
+            }
+            running = true;
+            sw.Reset();
+            for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)
+            {
+                sw.Start();
+                for (int i = 0; i < writingChars.Count && running; i++)
                 {
-                    break;
+                    if (i == 0)
+                    {
+                        await Task.Delay((int)writingChars[i].startTime);
+                    }
+                    else
+                    {
+                        await Task.Delay((int)(writingChars[i].startTime - writingChars[i - 1].startTime));
+                    }
+                    if (!running)
+                    {
+                        break;
+                    }
+                    writingChars[i].activate();
                 }
-                writingChars[i].activate();
+                while (gkh.keysHolding.Count > 0)//means we need to check if all keys finished
+                {
+                    await Task.Delay(1);
+                }
+                sw.Reset();
             }
             running = false;
         }
@@ -167,10 +202,23 @@ namespace RecordNplay
         {
             if (listBox1.SelectedItem != null)
             {
-                File.Delete(listBox1.SelectedItem.ToString() + ".json");
+                try
+                {
+                    File.Delete(listBox1.SelectedItem.ToString() + ".json");
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Looks like the file isn't there anymore");
+                }
+                writingChars = new List<PressedInput>();
+                listBox1.Items.RemoveAt(listBox1.SelectedIndex);
+                listView1.Items.Clear();
             }
-            writingChars = new List<PressedInput>();
-            listView1.Items.Clear();
+            else
+            {
+                MessageBox.Show("Please choose a macro to delete");
+            }
+
         }
 
         private void SaveMacro_Click(object sender, EventArgs e)
@@ -469,6 +517,10 @@ namespace RecordNplay
                     }
                 }
             }
+            else
+            {
+                MessageBox.Show("Please choose a step to delete");
+            }
         }
 
         private int getIndexOfCoupleClick(int currentIndex, int clickType)
@@ -538,7 +590,7 @@ namespace RecordNplay
                 else//it's a mouse
                 {
                     byte clickType;
-                    if(info[0].Equals("Left Click"))
+                    if (info[0].Equals("Left Click"))
                     {
                         clickType = 0;
                     }
@@ -550,7 +602,7 @@ namespace RecordNplay
                     int x = int.Parse(info[2]);
                     int y = int.Parse(info[3]);
                     int insertIndex = findIndexOfInsert(startTime);
-                    writingChars.Insert(insertIndex, new PressedMouseInfo(clickType,x,y,startTime));
+                    writingChars.Insert(insertIndex, new PressedMouseInfo(clickType, x, y, startTime));
                     listView1.Items.Insert(insertIndex, writingChars[insertIndex].ToString());
                     insertIndex = findIndexOfInsert(startTime + 100);
                     writingChars.Insert(insertIndex, new PressedMouseInfo(++clickType, x, y, startTime + 100));
@@ -572,7 +624,7 @@ namespace RecordNplay
                 }
                 else
                 {
-                    if(i == writingChars.Count - 1)
+                    if (i == writingChars.Count - 1)
                     {
                         index++;
                         break;
@@ -580,6 +632,11 @@ namespace RecordNplay
                 }
             }
             return index;
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            timeLabel.Text = "Time:" + sw.ElapsedMilliseconds;
         }
     }
 }

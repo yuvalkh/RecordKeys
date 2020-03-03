@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Threading;
+using WindowsInput.Native;
 
 namespace RecordNplay
 {
@@ -23,9 +24,7 @@ namespace RecordNplay
 
         public Form1 form1;
 
-        Stopwatch sw = Form1.sw;
-
-        private List<String> keysHolding = new List<String>();
+        public List<Keys> keysHolding = new List<Keys>();
 
         public struct keyboardHookStruct
         {
@@ -64,7 +63,7 @@ namespace RecordNplay
                     PressedKeyInfo keyInfo = getLastOccurance(Form1.writingChars, (byte)e.KeyValue);
                     if (keyInfo != null)
                     {
-                        keyInfo.duration = sw.ElapsedMilliseconds - keyInfo.startTime;
+                        keyInfo.duration = Form1.sw.ElapsedMilliseconds - keyInfo.startTime;
                     }
                 }
                 else//To start the macro
@@ -80,13 +79,22 @@ namespace RecordNplay
             }
             else
             {
-                if((byte)e.KeyValue == 27)
+                if((byte)e.KeyValue == 27)//it means we need to stop the macro
                 {
+                    releaseAllKeys();
                     Form1.running = false;
                 }
             }
             Console.WriteLine("Up\t" + e.KeyCode.ToString());
             //e.Handled = true;
+        }
+
+        private void releaseAllKeys()
+        {
+            for (int i = 0; i < keysHolding.Count; i++)
+            {
+                KeysWriter.sim.Keyboard.KeyUp((VirtualKeyCode)keysHolding[i]);
+            }
         }
 
         private PressedKeyInfo getLastOccurance(List<PressedInput> inputs, byte keyCode)
@@ -103,9 +111,9 @@ namespace RecordNplay
 
         void gkh_KeyDown(object sender, KeyEventArgs e)
         {
-            if (!Form1.running)
+            if (!Form1.running && Form1.recording)
             {
-                Form1.writingChars.Add(new PressedKeyInfo((byte)e.KeyValue, 0, sw.ElapsedMilliseconds));
+               Form1.writingChars.Add(new PressedKeyInfo((byte)e.KeyValue, 0, Form1.sw.ElapsedMilliseconds));
             }
             Console.WriteLine("Down\t" + e.KeyCode.ToString());
             //e.Handled = true;
@@ -155,8 +163,6 @@ namespace RecordNplay
             callbackDelegate = new keyboardHookProc(hookProc);
             hhook = SetWindowsHookEx(WH_KEYBOARD_LL, callbackDelegate, hInstance, 0);
             if (hhook == IntPtr.Zero) throw new Win32Exception();
-            sw = new Stopwatch();
-            sw.Start();
         }
 
         public void unhook()
@@ -195,15 +201,15 @@ namespace RecordNplay
                 KeyEventArgs kea = new KeyEventArgs(key);
                 if ((wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) && (KeyDown != null))
                 {
-                    if (!keysHolding.Contains(kea.KeyCode.ToString()))
+                    if (!keysHolding.Contains(kea.KeyCode))
                     {
-                        keysHolding.Add(kea.KeyCode.ToString());
+                        keysHolding.Add(kea.KeyCode);
                         gkh_KeyDown(this, kea);
                     }
                 }
                 else if ((wParam == WM_KEYUP || wParam == WM_SYSKEYUP) && (KeyUp != null))
                 {
-                    keysHolding.Remove(kea.KeyCode.ToString());
+                    keysHolding.Remove(kea.KeyCode);
                     gkh_KeyUp(this, kea);
                 }
                 if (kea.Handled)
