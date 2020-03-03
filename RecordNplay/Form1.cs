@@ -52,6 +52,12 @@ namespace RecordNplay
         private void Form1_Load(object sender, EventArgs e)
         {
             comboBox1.Items.Add("None");
+            comboBox1.Items.Add("LShiftKey");
+            comboBox1.Items.Add("RShiftKey");
+            for (char c = 'A'; c <= 'Z'; c++)
+            {
+                comboBox1.Items.Add(c);
+            }
             for (int i = 1; i <= 12; i++)
             {
                 comboBox1.Items.Add("F" + i);

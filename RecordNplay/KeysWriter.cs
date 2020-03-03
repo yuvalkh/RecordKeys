@@ -14,14 +14,16 @@ namespace RecordNplay
 {
     static class KeysWriter
     {
+        
         public static InputSimulator sim = new InputSimulator();
         public static void holdKey(byte keyCode,int duration)
         {
-            sim.Keyboard.KeyDown((VirtualKeyCode)keyCode);
+            InputManager.Keyboard.KeyDown((Keys)keyCode);
+            //sim.Keyboard.KeyDown((VirtualKeyCode)keyCode);
             //sim.Keyboard.Sleep(duration);
             Thread.Sleep(duration);
-            //await waitWithInterrupt(duration);
-            sim.Keyboard.KeyUp((VirtualKeyCode)keyCode);
+            InputManager.Keyboard.KeyUp((Keys)keyCode);
+            //sim.Keyboard.KeyUp((VirtualKeyCode)keyCode);
             Console.WriteLine("Wrote the letter:" + (char)keyCode);
         }
         private static async Task waitWithInterrupt(int amountOfSeconds)

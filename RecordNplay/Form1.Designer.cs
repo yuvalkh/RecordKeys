@@ -164,7 +164,7 @@
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.label1.Location = new System.Drawing.Point(-1, 275);
+            this.label1.Location = new System.Drawing.Point(40, 275);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(108, 20);
             this.label1.TabIndex = 17;
@@ -173,9 +173,9 @@
             // comboBox1
             // 
             this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(104, 273);
+            this.comboBox1.Location = new System.Drawing.Point(31, 298);
             this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(73, 24);
+            this.comboBox1.Size = new System.Drawing.Size(128, 24);
             this.comboBox1.TabIndex = 18;
             this.comboBox1.Text = "None";
             // 
