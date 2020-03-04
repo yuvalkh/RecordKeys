@@ -189,6 +189,27 @@ namespace RecordNplay
             }
             return null;
         }
+        public static string showChangeStartTime()
+        {
+            Form prompt = new Form()
+            {
+                Width = 350,
+                Height = 180,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Change Macro Start Time",
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            Label textLabel1 = new Label() { Left = 20, Top = 10, Text = "StartTime:" };
+            TextBox textBox1 = new TextBox() { Left = 100, Top = 10, Width = 100};
+            Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 100, DialogResult = DialogResult.OK };
+            confirmation.Click += (sender, e) => { prompt.Close(); };
+            prompt.Controls.Add(textBox1);
+            prompt.Controls.Add(confirmation);
+            prompt.Controls.Add(textLabel1);
+            prompt.AcceptButton = confirmation;
+
+            return prompt.ShowDialog() == DialogResult.OK ? textBox1.Text : null;
+        }
 
     }
 }

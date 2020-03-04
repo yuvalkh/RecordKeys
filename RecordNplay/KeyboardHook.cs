@@ -68,12 +68,33 @@ namespace RecordNplay
                 }
                 else//To start the macro
                 {
-                    if(form1.comboBox1.Text.Equals(e.KeyCode.ToString()))
+                    if(form1.comboBox1.Text.Equals(e.KeyCode.ToString()) && Form1.slot1 != null)
                     {
                         new Thread(() =>
                         {
-                            form1.runMacro();
+                            form1.runMacro(Form1.slot1, form1.macro1Loop.Text, form1.macro1Wait.Text);
                         }).Start(); 
+                    }
+                    if (form1.comboBox2.Text.Equals(e.KeyCode.ToString()) && Form1.slot2 != null)
+                    {
+                        new Thread(() =>
+                        {
+                            form1.runMacro(Form1.slot2,form1.macro2Loop.Text,form1.macro2Wait.Text);
+                        }).Start();
+                    }
+                    if (form1.comboBox3.Text.Equals(e.KeyCode.ToString()) && Form1.slot3 != null)
+                    {
+                        new Thread(() =>
+                        {
+                            form1.runMacro(Form1.slot3, form1.macro3Loop.Text, form1.macro3Wait.Text);
+                        }).Start();
+                    }
+                    if (form1.comboBox4.Text.Equals(e.KeyCode.ToString()) && Form1.writingChars != null)
+                    {
+                        new Thread(() =>
+                        {
+                            form1.runMacro(Form1.writingChars,form1.currentLoop.Text,form1.currentWait.Text);
+                        }).Start();
                     }
                 }
             }
@@ -85,7 +106,7 @@ namespace RecordNplay
                     Form1.running = false;
                 }
             }
-            Console.WriteLine("Up\t" + e.KeyCode.ToString());
+                //Console.WriteLine("Up\t" + e.KeyCode.ToString());
             //e.Handled = true;
         }
 
@@ -115,7 +136,7 @@ namespace RecordNplay
             {
                Form1.writingChars.Add(new PressedKeyInfo((byte)e.KeyValue, 0, Form1.sw.ElapsedMilliseconds));
             }
-            Console.WriteLine("Down\t" + e.KeyCode.ToString());
+                //Console.WriteLine("Down\t" + e.KeyCode.ToString());
             //e.Handled = true;
         }
         /// <summary>

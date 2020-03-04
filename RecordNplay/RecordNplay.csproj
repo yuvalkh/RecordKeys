@@ -62,6 +62,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="JsonSavedObject.cs" />
     <Compile Include="KeyboardHook.cs" />
     <Compile Include="KeysWriter.cs" />
     <Compile Include="MouseClicker.cs" />

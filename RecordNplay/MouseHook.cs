@@ -44,22 +44,22 @@ namespace RecordNplay
             if (nCode >= 0 && MouseMessages.WM_LBUTTONDOWN == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseInfo(0, Cursor.Position.X, Cursor.Position.Y,Form1.sw.ElapsedMilliseconds));
-                Console.WriteLine("You clicked left button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
+                //Console.WriteLine("You clicked left button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
             if (nCode >= 0 && MouseMessages.WM_LBUTTONUP == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseInfo(1, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
-                Console.WriteLine("You removed left button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
+                //Console.WriteLine("You removed left button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
             if (nCode >= 0 && MouseMessages.WM_RBUTTONDOWN == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseInfo(2, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
-                Console.WriteLine("You clicked right button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
+                //Console.WriteLine("You clicked right button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
             if (nCode >= 0 && MouseMessages.WM_RBUTTONUP == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseInfo(3, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
-                Console.WriteLine("You removed right button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
+                //Console.WriteLine("You removed right button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
             /*if (nCode >= 0 && MouseMessages.WM_MOUSEWHEEL == (MouseMessages)wParam)
             {
