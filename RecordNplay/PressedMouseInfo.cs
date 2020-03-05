@@ -21,6 +21,14 @@ namespace RecordNplay
             this.startTime = startTime;
         }
 
+        public PressedMouseInfo(PressedMouseInfo pressedInfo)
+        {
+            clickType = pressedInfo.clickType;
+            x = pressedInfo.x;
+            y = pressedInfo.y;
+            startTime = pressedInfo.startTime;
+        }
+
         public override void activate()
         {
             if (clickType == 0)

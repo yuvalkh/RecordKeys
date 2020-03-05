@@ -68,33 +68,37 @@ namespace RecordNplay
                 }
                 else//To start the macro
                 {
-                    if(form1.comboBox1.Text.Equals(e.KeyCode.ToString()) && Form1.slot1 != null)
+                    string currentProgram = GetFocusedProcessName();
+                    if (!currentProgram.Equals("RecordNplay"))
                     {
-                        new Thread(() =>
+                        if (form1.comboBox1.Text.Equals(e.KeyCode.ToString()) && Form1.slot1 != null)
                         {
-                            form1.runMacro(Form1.slot1, form1.macro1Loop.Text, form1.macro1Wait.Text);
-                        }).Start(); 
-                    }
-                    if (form1.comboBox2.Text.Equals(e.KeyCode.ToString()) && Form1.slot2 != null)
-                    {
-                        new Thread(() =>
+                            new Thread(() =>
+                            {
+                                form1.runMacro(Form1.slot1, form1.macro1Loop.Text, form1.macro1Wait.Text);
+                            }).Start();
+                        }
+                        if (form1.comboBox2.Text.Equals(e.KeyCode.ToString()) && Form1.slot2 != null)
                         {
-                            form1.runMacro(Form1.slot2,form1.macro2Loop.Text,form1.macro2Wait.Text);
-                        }).Start();
-                    }
-                    if (form1.comboBox3.Text.Equals(e.KeyCode.ToString()) && Form1.slot3 != null)
-                    {
-                        new Thread(() =>
+                            new Thread(() =>
+                            {
+                                form1.runMacro(Form1.slot2, form1.macro2Loop.Text, form1.macro2Wait.Text);
+                            }).Start();
+                        }
+                        if (form1.comboBox3.Text.Equals(e.KeyCode.ToString()) && Form1.slot3 != null)
                         {
-                            form1.runMacro(Form1.slot3, form1.macro3Loop.Text, form1.macro3Wait.Text);
-                        }).Start();
-                    }
-                    if (form1.comboBox4.Text.Equals(e.KeyCode.ToString()) && Form1.writingChars != null)
-                    {
-                        new Thread(() =>
+                            new Thread(() =>
+                            {
+                                form1.runMacro(Form1.slot3, form1.macro3Loop.Text, form1.macro3Wait.Text);
+                            }).Start();
+                        }
+                        if (form1.comboBox4.Text.Equals(e.KeyCode.ToString()) && Form1.writingChars != null)
                         {
-                            form1.runMacro(Form1.writingChars,form1.currentLoop.Text,form1.currentWait.Text);
-                        }).Start();
+                            new Thread(() =>
+                            {
+                                form1.runMacro(Form1.writingChars, form1.currentLoop.Text, form1.currentWait.Text);
+                            }).Start();
+                        }
                     }
                 }
             }
@@ -110,6 +114,34 @@ namespace RecordNplay
             //e.Handled = true;
         }
 
+        // The GetForegroundWindow function returns a handle to the foreground window
+        // (the window  with which the user is currently working).
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        // The GetWindowThreadProcessId function retrieves the identifier of the thread
+        // that created the specified window and, optionally, the identifier of the
+        // process that created the window.
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern Int32 GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        public static string GetFocusedProcessName()
+        {
+            IntPtr hwnd = GetForegroundWindow();
+
+            // The foreground window can be NULL in certain circumstances, 
+            // such as when a window is losing activation.
+            if (hwnd == null)
+                return "Unknown";
+
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            Process p = Process.GetProcessById((int)pid);
+            if (p != null)
+                return p.ProcessName;
+
+            return "UnknownProcess";
+        }
         private void releaseAllKeys()
         {
             for (int i = 0; i < keysHolding.Count; i++)

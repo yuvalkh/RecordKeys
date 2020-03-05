@@ -210,6 +210,10 @@ namespace RecordNplay
 
             return prompt.ShowDialog() == DialogResult.OK ? textBox1.Text : null;
         }
-
+        public static bool showYesNoDialog(string question,string title)
+        {
+            DialogResult dialogResult = MessageBox.Show(question, title, MessageBoxButtons.YesNo);
+            return dialogResult == DialogResult.Yes ? true : false;
+        }
     }
 }

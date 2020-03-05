@@ -21,6 +21,13 @@ namespace RecordNplay
             this.startTime = startTime;
         }
 
+        public PressedKeyInfo(PressedKeyInfo pressedInfo)
+        {
+            keyCode = pressedInfo.keyCode;
+            duration = pressedInfo.duration;
+            startTime = pressedInfo.startTime;
+        }
+
         public override void activate()
         {
             new Thread(() =>
