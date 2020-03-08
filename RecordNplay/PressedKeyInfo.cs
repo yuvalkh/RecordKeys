@@ -11,9 +11,15 @@ namespace RecordNplay
     [Serializable]
     public class PressedKeyInfo : PressedInput
     {
-        public byte keyCode;
-        public long duration;
+        public byte keyCode { get; set; }
+        public long duration { get; set; }
 
+        public PressedKeyInfo()
+        {
+            this.keyCode = 0;
+            this.duration = 0;
+            this.startTime = 0;
+        }
         public PressedKeyInfo(byte keyCode, long duration, long startTime)
         {
             this.keyCode = keyCode;

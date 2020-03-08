@@ -1,18 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml.Serialization;
 using Newtonsoft.Json;
 
 namespace RecordNplay
@@ -60,10 +55,8 @@ namespace RecordNplay
             this.listView1.FullRowSelect = true;
             this.listView1.Columns.Add("", -2);
             DirectoryInfo d = new DirectoryInfo(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-
             foreach (var file in d.GetFiles("*.json"))
             {
-                //Directory.Move(file.FullName, filepath + "\\TextFiles\\" + file.Name);
                 listBox1.Items.Add(file.Name.Substring(0, file.Name.Length - 5));
             }
             setTriggerComboBox(comboBox1);
@@ -97,7 +90,6 @@ namespace RecordNplay
             {
                 comboBox.Items.Add("F" + i);
             }
-            //comboBox.Text = "None";
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -113,7 +105,6 @@ namespace RecordNplay
             sw.Start();
             MouseHook.Start();
             handled = "writingChars";
-            //gkh.hook();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -123,7 +114,6 @@ namespace RecordNplay
                 recording = false;
                 sw.Reset();
                 MouseHook.stop();
-                //gkh.unhook();
                 showMacroSteps(writingChars);
                 handled = "writingChars";
                 startIndexLoop = writingChars.Count;
@@ -228,7 +218,7 @@ namespace RecordNplay
                 try
                 {
                     repeatLoop = int.Parse(internalLoop.Text);
-                    if (repeatLoop < 1)
+                    if (repeatLoop < 0)
                     {
                         throw new Exception();
                     }
@@ -245,18 +235,27 @@ namespace RecordNplay
                 }
                 for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)
                 {
-                    if (macroSteps == whoIsHandled() && numberOfMarkedLoop > 0)//we run macro that is in instructos and it has loops
+                    if (macroSteps == whoIsHandled())//we run macro that is in instructos and it has loops
                     {
                         sw.Start();
+                        bool jumped = false;
                         for (int i = 0; i < macroSteps.Count && running; i++)
                         {
-                            if (i == 0)
+                            if (jumped)
                             {
-                                await Task.Delay((int)macroSteps[i].startTime);
+                                await Task.Delay(waitBetweenLoops);
+                                jumped = false;
                             }
                             else
                             {
-                                await Task.Delay((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
+                                if (i == 0)
+                                {
+                                    await Task.Delay((int)macroSteps[i].startTime);
+                                }
+                                else
+                                {
+                                    await Task.Delay((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
+                                }
                             }
                             if (!running)
                             {
@@ -268,10 +267,14 @@ namespace RecordNplay
                                 i = startIndexLoop - 1;
                                 currentMiniLoop++;
                                 sw = new EditableStopWatch(macroSteps[startIndexLoop].startTime);
-                                Thread.Sleep(waitBetweenLoops);
+                                jumped = true;
+                                while (KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
+                                {
+                                    await Task.Delay(1);
+                                }
                             }
                         }
-                        while (/*gkh.keysHolding.Count*/KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
+                        while (KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
                         {
                             await Task.Delay(1);
                         }
@@ -387,12 +390,6 @@ namespace RecordNplay
             numberOfMarkedLoop = 0;
             startIndexLoop = savedObject.list.Count;
             return savedObject.list;
-
-            /*return JsonConvert.DeserializeObject<List<PressedInput>>(File.ReadAllText(fileName), new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.Auto,
-                NullValueHandling = NullValueHandling.Ignore,
-            });*/
         }
 
         private void saveMacro(List<PressedInput> listofa, String name, string currentLoop, string currentWait)
@@ -537,24 +534,6 @@ namespace RecordNplay
                         }
                         if (changed)
                         {
-                            /*if (newIndexToInsert != -1)
-                            {
-                                if (newStartTime > initialStartTime)
-                                {
-                                    listView1.Items.Insert(newIndexToInsert, currentAsPKI.ToString());
-                                    listView1.Items.RemoveAt(currentIndex);
-                                }
-                                else
-                                {
-                                    listView1.Items.RemoveAt(currentIndex);
-                                    listView1.Items.Insert(newIndexToInsert, currentAsPKI.ToString());
-                                }
-                            }
-                            else
-                            {
-                                listView1.Items.RemoveAt(currentIndex);
-                                listView1.Items.Insert(currentIndex, handledMacro[currentIndex].ToString());
-                            }*/
                             showMacroSteps(handledMacro);
                         }
                     }
@@ -589,8 +568,6 @@ namespace RecordNplay
                     if (newValueInString != null && !newValueInString[0].Equals("") && !newValueInString[0].Equals("") && newValueInString[1].All(x => char.IsDigit(x)) && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)))
                     {
                         bool changed = false;
-                        //clickType
-                        ////////////////////////////////////////////////////
                         newClickType = newValueInString[0];
                         newStartTime = int.Parse(newValueInString[1]);
                         newX = int.Parse(newValueInString[2]);
@@ -608,15 +585,11 @@ namespace RecordNplay
                             {
                                 infoAsMouse.clickType -= 2;
                                 ((PressedMouseInfo)handledMacro[coupleIndex]).clickType -= 2;
-                                //listView1.Items.RemoveAt(coupleIndex);
-                                //listView1.Items.Insert(coupleIndex, handledMacro[coupleIndex].ToString());
                             }
                             else
                             {
                                 infoAsMouse.clickType += 2;
                                 ((PressedMouseInfo)handledMacro[coupleIndex]).clickType += 2;
-                                //listView1.Items.RemoveAt(coupleIndex);
-                                //listView1.Items.Insert(coupleIndex, handledMacro[coupleIndex].ToString());
                             }
                         }
                         if (initialX != newX)
@@ -632,8 +605,6 @@ namespace RecordNplay
                         if (changed)
                         {
                             showMacroSteps(handledMacro);
-                            /*listView1.Items.RemoveAt(currentIndex);
-                            listView1.Items.Insert(currentIndex, handledMacro[currentIndex].ToString());*/
                         }
                     }
                     else
@@ -672,7 +643,6 @@ namespace RecordNplay
                 {
                     handledMacro.RemoveAt(currentIndex);
                     updateIndexesOnDeleteStep(currentIndex);
-                    //listView1.Items.RemoveAt(currentIndex);
                 }
                 else
                 {
@@ -682,25 +652,20 @@ namespace RecordNplay
                         handledMacro.RemoveAt(coupleIndex);
                         updateIndexesOnDeleteStep(coupleIndex);
 
-                        //listView1.Items.RemoveAt(coupleIndex);
-
                         handledMacro.RemoveAt(currentIndex);
                         updateIndexesOnDeleteStep(currentIndex);
-                        //listView1.Items.RemoveAt(currentIndex);
                     }
                     else//mouse up
                     {
                         handledMacro.RemoveAt(currentIndex);
                         updateIndexesOnDeleteStep(currentIndex);
-                        //listView1.Items.RemoveAt(currentIndex);
 
                         handledMacro.RemoveAt(coupleIndex);
                         updateIndexesOnDeleteStep(coupleIndex);
-                        //listView1.Items.RemoveAt(coupleIndex);
                     }
 
                 }
-            showMacroSteps(handledMacro);
+                showMacroSteps(handledMacro);
             }
             else
             {
@@ -823,7 +788,10 @@ namespace RecordNplay
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            timeLabel.Text = "Time:" + sw.ElapsedMilliseconds;
+            if(sw != null)
+            {
+                timeLabel.Text = "Time:" + sw.ElapsedMilliseconds;
+            }
         }
 
         private void slot1Button_Click(object sender, EventArgs e)
