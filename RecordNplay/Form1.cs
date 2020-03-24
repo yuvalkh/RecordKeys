@@ -99,12 +99,15 @@ namespace RecordNplay
 
         private void button1_Click(object sender, EventArgs e)
         {
-            recording = true;
-            writingChars = new List<PressedInput>();
-            sw.Reset();
-            sw.Start();
-            MouseHook.Start();
-            handled = "writingChars";
+            if (!recording)
+            {
+                recording = true;
+                writingChars = new List<PressedInput>();
+                sw.Reset();
+                sw.Start();
+                MouseHook.Start();
+                handled = "writingChars";
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -327,6 +330,11 @@ namespace RecordNplay
         private async void button3_Click(object sender, EventArgs e)
         {
             List<PressedInput> handledMacro = whoIsHandled();
+            if(handledMacro == null || handledMacro.Count < 1)
+            {
+                MessageBox.Show("There is no macro to repeat");
+                return;
+            }
             await countDownOnScreen(2);
             runMacro(handledMacro, currentLoop.Text, currentWait.Text);
         }
@@ -945,7 +953,7 @@ namespace RecordNplay
             }
             else
             {
-                MessageBox.Show("You can't change Starting time of macro if you don't have a loaded macro");
+                MessageBox.Show("You can't change Starting time of macro if you don't have a macro");
             }
 
         }
@@ -953,6 +961,11 @@ namespace RecordNplay
         private void makeMacroFast_Click(object sender, EventArgs e)
         {
             List<PressedInput> handledMacro = whoIsHandled();
+            if(handledMacro == null || handledMacro.Count < 1)
+            {
+                MessageBox.Show("You can't make macro faster if you don't have a macro");
+                return;
+            }
             for (int i = 0; i < handledMacro.Count; i++)
             {
                 handledMacro[i].startTime = i;
@@ -1039,6 +1052,11 @@ namespace RecordNplay
 
         private void setLoopButton_Click(object sender, EventArgs e)
         {
+            if (writingChars == null || writingChars.Count < 1)
+            {
+                MessageBox.Show("In order to add loop you need to select steps");
+                return;
+            }
             if (!checkIfChooseInRow(listView1))
             {
                 MessageBox.Show("You need to select steps in a row");
@@ -1075,6 +1093,11 @@ namespace RecordNplay
 
         private void removeLoopButton_Click(object sender, EventArgs e)
         {
+            if (writingChars == null || writingChars.Count < 1)
+            {
+                MessageBox.Show("in order to remove loop you need to choose steps");
+                return;
+            }
             if (!checkIfChooseInRow(listView1))
             {
                 MessageBox.Show("You need to select steps in a row");
@@ -1094,7 +1117,7 @@ namespace RecordNplay
                     listView1.Items[index].BackColor = Color.White;
                 }
             }
-            if (listView1.SelectedIndices != null)
+            if (listView1.SelectedIndices != null && listView1.SelectedIndices.Count > 0)
             {
                 if (listView1.SelectedIndices[0] <= endIndexLoop && listView1.SelectedIndices[listView1.SelectedIndices.Count - 1] >= endIndexLoop)
                 {
@@ -1134,7 +1157,12 @@ namespace RecordNplay
 
         private void copyLinesButton_Click(object sender, EventArgs e)
         {
-            if (listView1.SelectedIndices == null)
+            if(writingChars == null || writingChars.Count < 1)
+            {
+                MessageBox.Show("In order to copy lines you need to choose lines");
+                return;
+            }
+            if (listView1.SelectedIndices.Count > 0)
             {
                 return;
             }
