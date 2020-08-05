@@ -109,7 +109,7 @@
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(85, 9);
+            this.button2.Location = new System.Drawing.Point(81, 9);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(63, 43);
             this.button2.TabIndex = 5;
@@ -119,11 +119,11 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(240, 9);
+            this.button3.Location = new System.Drawing.Point(236, 9);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(63, 43);
+            this.button3.Size = new System.Drawing.Size(69, 43);
             this.button3.TabIndex = 6;
-            this.button3.Text = "Taase dome";
+            this.button3.Text = "Repeat";
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
@@ -139,7 +139,7 @@
             // 
             // SaveMacro
             // 
-            this.SaveMacro.Location = new System.Drawing.Point(163, 9);
+            this.SaveMacro.Location = new System.Drawing.Point(159, 9);
             this.SaveMacro.Name = "SaveMacro";
             this.SaveMacro.Size = new System.Drawing.Size(63, 43);
             this.SaveMacro.TabIndex = 8;
@@ -190,6 +190,7 @@
             // listView1
             // 
             this.listView1.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.listView1.HideSelection = false;
             this.listView1.Location = new System.Drawing.Point(500, 73);
             this.listView1.Name = "listView1";
             this.listView1.Size = new System.Drawing.Size(300, 308);

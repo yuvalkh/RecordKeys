@@ -36,7 +36,7 @@ namespace RecordNplay
 
         public override void activate()
         {
-            new Thread(() =>
+            new Task(() =>
             {
                 KeysWriter.holdKey(keyCode, (int)duration);
             }).Start();

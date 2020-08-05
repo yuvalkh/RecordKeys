@@ -253,11 +253,13 @@ namespace RecordNplay
                             {
                                 if (i == 0)
                                 {
-                                    await Task.Delay((int)macroSteps[i].startTime);
+                                    new ManualResetEvent(false).WaitOne((int)macroSteps[i].startTime);
+                                    //await Task.Delay((int)macroSteps[i].startTime);
                                 }
                                 else
                                 {
-                                    await Task.Delay((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
+                                    new ManualResetEvent(false).WaitOne((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
+                                    //await Task.Delay((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
                                 }
                             }
                             if (!running)
@@ -279,7 +281,8 @@ namespace RecordNplay
                         }
                         while (KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
                         {
-                            await Task.Delay(1);
+                            new ManualResetEvent(false).WaitOne(1);
+                            //await Task.Delay(1);
                         }
                         sw.Stop();
                         if (timeToWaitBetweenLoops > 0 && currentLoop + 1 < numOfLoops && running)
@@ -299,11 +302,13 @@ namespace RecordNplay
                     {
                         if (i == 0)
                         {
-                            await Task.Delay((int)macroSteps[i].startTime);
+                            new ManualResetEvent(false).WaitOne((int)macroSteps[i].startTime);
+                            //await Task.Delay((int)macroSteps[i].startTime);
                         }
                         else
                         {
-                            await Task.Delay((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
+                            new ManualResetEvent(false).WaitOne((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
+                            //await Task.Delay((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
                         }
                         if (!running)
                         {
@@ -313,7 +318,8 @@ namespace RecordNplay
                     }
                     while (/*gkh.keysHolding.Count*/KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
                     {
-                        await Task.Delay(1);
+                        new ManualResetEvent(false).WaitOne(1);
+                        //await Task.Delay(1);
                     }
                     sw.Stop();
                     if (timeToWaitBetweenLoops > 0 && currentLoop + 1 < numOfLoops && running)
@@ -968,7 +974,11 @@ namespace RecordNplay
             }
             for (int i = 0; i < handledMacro.Count; i++)
             {
-                handledMacro[i].startTime = i;
+                handledMacro[i].startTime = i*3;
+                if(handledMacro[i] is PressedKeyInfo)
+                {
+                    ((PressedKeyInfo)handledMacro[i]).duration = 2;
+                }
             }
             showMacroSteps(handledMacro);
         }
@@ -1162,7 +1172,7 @@ namespace RecordNplay
                 MessageBox.Show("In order to copy lines you need to choose lines");
                 return;
             }
-            if (listView1.SelectedIndices.Count > 0)
+            if (listView1.SelectedIndices.Count < 1)
             {
                 return;
             }
