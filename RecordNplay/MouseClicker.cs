@@ -50,8 +50,10 @@ namespace RecordNplay
 
         public static void pressLeftMouse(int x, int y)
         {
-            SetCursorPos(x, y);
-            Cursor.Position = new Point(x, y);
+            if(Cursor.Position.X != x || Cursor.Position.Y != y)
+            {
+                Cursor.Position = new Point(x, y);
+            }
             //mouse_event(MOUSEEVENTF_MOVE, (uint)x, (uint)y, 0, new UIntPtr(0));
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, new UIntPtr(0));
         }
@@ -83,20 +85,29 @@ namespace RecordNplay
         public static void leaveLeftMouse(int x, int y)
         {
             //Cursor.Position = new Point(x, y);
-            LinearSmoothMove(new Point(x, y), 5);
+            if (Cursor.Position.X != x || Cursor.Position.Y != y)
+            {
+                LinearSmoothMove(new Point(x, y), 4);
+            }
             //mouse_event(MOUSEEVENTF_MOVE, (uint)x, (uint)y, 0, new UIntPtr(0));
             mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, new UIntPtr(0));
         }
 
         public static void pressRightMouse(int x, int y)
         {
-            Cursor.Position = new Point(x, y);
+            if (Cursor.Position.X != x || Cursor.Position.Y != y)
+            {
+                Cursor.Position = new Point(x, y);
+            }
             mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, new UIntPtr(0));
         }
 
         public static void leaveRighttMouse(int x, int y)
         {
-            Cursor.Position = new Point(x, y);
+            if (Cursor.Position.X != x || Cursor.Position.Y != y)
+            {
+                LinearSmoothMove(new Point(x, y), 4);
+            }
             mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, new UIntPtr(0));
         }
     }

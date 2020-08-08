@@ -18,11 +18,16 @@ namespace RecordNplay
         public static InputSimulator sim = new InputSimulator();
         public static void holdKey(byte keyCode,int duration)
         {
-            keysDown.Add((Keys)keyCode);
+            
+            //Stopwatch sw = new Stopwatch();
+            //sw.Start();
             InputManager.Keyboard.KeyDown((Keys)keyCode);
+            keysDown.Add((Keys)keyCode);
             //sim.Keyboard.KeyDown((VirtualKeyCode)keyCode);
             //sim.Keyboard.Sleep(duration);
-            Thread.Sleep(duration);
+            //await Task.Delay(duration);
+            new ManualResetEvent(false).WaitOne(duration);
+            //while (sw.ElapsedMilliseconds < duration) { }
             InputManager.Keyboard.KeyUp((Keys)keyCode);
             keysDown.Remove((Keys)keyCode);
             //sim.Keyboard.KeyUp((VirtualKeyCode)keyCode);

@@ -102,6 +102,7 @@ namespace RecordNplay
             if (!recording)
             {
                 recording = true;
+                numberOfMarkedLoop = 0;
                 writingChars = new List<PressedInput>();
                 sw.Reset();
                 sw.Start();
@@ -246,7 +247,8 @@ namespace RecordNplay
                         {
                             if (jumped)
                             {
-                                await Task.Delay(waitBetweenLoops);
+                                //await Task.Delay(waitBetweenLoops);
+                                new ManualResetEvent(false).WaitOne(waitBetweenLoops);
                                 jumped = false;
                             }
                             else
@@ -298,7 +300,24 @@ namespace RecordNplay
                 for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)
                 {
                     sw.Start();
-                    for (int i = 0; i < macroSteps.Count && running; i++)
+                    int stepNumber = 0;
+                    while(stepNumber < macroSteps.Count)
+                    {
+                        if (!running)
+                        {
+                            break;
+                        }
+                        if (macroSteps[stepNumber].startTime <=sw.ElapsedMilliseconds)
+                        {
+                            macroSteps[stepNumber].activate();
+                            stepNumber++;
+                        }
+                    }
+
+
+
+
+                    /*for (int i = 0; i < macroSteps.Count && running; i++)
                     {
                         if (i == 0)
                         {
@@ -314,8 +333,12 @@ namespace RecordNplay
                         {
                             break;
                         }
+                        if(macroSteps[i] is PressedKeyInfo)
+                        {
+                            Console.WriteLine("Pressed " + (Keys)((PressedKeyInfo)macroSteps[i]).keyCode + " at " + sw.ElapsedMilliseconds + " and need to be at " + macroSteps[i].startTime);
+                        }
                         macroSteps[i].activate();
-                    }
+                    }*/
                     while (/*gkh.keysHolding.Count*/KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
                     {
                         new ManualResetEvent(false).WaitOne(1);
@@ -972,12 +995,29 @@ namespace RecordNplay
                 MessageBox.Show("You can't make macro faster if you don't have a macro");
                 return;
             }
+            List<int> howManyInclude = new List<int>();
             for (int i = 0; i < handledMacro.Count; i++)
             {
-                handledMacro[i].startTime = i*3;
+                howManyInclude.Add(0);
+                if(!(handledMacro[i] is PressedKeyInfo))
+                {
+                    continue;
+                }
+                int whenEnd = (int)(((PressedKeyInfo)handledMacro[i]).startTime + ((PressedKeyInfo)handledMacro[i]).duration);
+                for (int j = i+1; j < handledMacro.Count; j++)
+                {
+                    if(whenEnd >= handledMacro[j].startTime)
+                    {
+                        howManyInclude[i]++;
+                    }
+                }
+            }
+            for (int i = 0; i < handledMacro.Count; i++)
+            {
+                handledMacro[i].startTime = i*5;
                 if(handledMacro[i] is PressedKeyInfo)
                 {
-                    ((PressedKeyInfo)handledMacro[i]).duration = 2;
+                    ((PressedKeyInfo)handledMacro[i]).duration = howManyInclude[i] > 0 ? 5 + (5 * howManyInclude[i] - 2) : 5;
                 }
             }
             showMacroSteps(handledMacro);

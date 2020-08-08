@@ -37,7 +37,6 @@ namespace RecordNplay
         }
 
         private delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
-
         private static IntPtr HookCallback(
           int nCode, IntPtr wParam, IntPtr lParam)
         {
@@ -63,7 +62,6 @@ namespace RecordNplay
             }
             /*if (nCode >= 0 && MouseMessages.WM_MOUSEWHEEL == (MouseMessages)wParam)
             {
-                int delta = (int)(SystemInformation.MouseWheelScrollDelta);
                 Console.WriteLine("The delta is: " + ((short)(wParam))); 
             }*/
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
