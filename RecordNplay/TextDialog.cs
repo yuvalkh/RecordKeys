@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Management;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Dynamic;
+using System.Drawing;
 
 namespace RecordNplay
 {
@@ -215,5 +219,133 @@ namespace RecordNplay
             DialogResult dialogResult = MessageBox.Show(question, title, MessageBoxButtons.YesNo);
             return dialogResult == DialogResult.Yes ? true : false;
         }
+        public static string[] showChooseProcessDialog()
+        {
+            Form prompt = new Form()
+            {
+                Width = 350,
+                Height = 500,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Choose process",
+                MaximizeBox = false,
+                StartPosition = FormStartPosition.CenterScreen
+            };
+           
+            ListView processesView = new ListView() { Left = 20, Top = 10 ,Width=220,Height=350, View= View.Details};
+            processesView.FullRowSelect = true;
+
+            ColumnHeader column1 = new ColumnHeader
+            {
+                Text = "Process Name",
+                Width = 120,
+                TextAlign = HorizontalAlignment.Left
+            };
+
+            ColumnHeader column2 = new ColumnHeader
+            {
+                Text = "PID",
+                Width = 100,
+                TextAlign = HorizontalAlignment.Left
+            };
+
+            //Add columns to the ListView:
+            processesView.Columns.Add(column1);
+            processesView.Columns.Add(column2);
+
+            Process[] processList = Process.GetProcesses();
+
+            foreach (Process process in processList)
+            {
+                if(process.ProcessName.Equals("svchost") || process.ProcessName.Equals("taskhostw"))
+                {
+                    continue;
+                }
+                string[] row = { process.ProcessName + ".exe", process.Id.ToString()};
+                ListViewItem item = new ListViewItem(row);
+                processesView.Items.Add(item);
+            }
+
+            Button refreshProcessesButton= new Button() { Text = "Refresh List", Left = 240, Width = 90, Top = 150 };
+            refreshProcessesButton.Click += (sender, args) => {
+                processesView.Items.Clear();
+                processList = Process.GetProcesses();
+
+                foreach (Process process in processList)
+                {
+                    if (process.ProcessName.Equals("svchost") || process.ProcessName.Equals("taskhostw"))
+                    {
+                        continue;
+                    }
+                    string[] row = { process.ProcessName + ".exe", process.Id.ToString() };
+                    ListViewItem item = new ListViewItem(row);
+                    processesView.Items.Add(item);
+                }
+            };
+            Button confirmation = new Button() { Text = "Ok", Left = 20, Width = 70, Top = 400, DialogResult = DialogResult.OK };
+            confirmation.Click += (sender, e) => { prompt.Close(); };
+            prompt.Controls.Add(processesView);
+            prompt.Controls.Add(refreshProcessesButton);
+            prompt.Controls.Add(confirmation);
+
+            return prompt.ShowDialog() == DialogResult.OK ? new string[] { processesView.SelectedItems[0].ToString() } : null;
+        }
+
+        private static string BytesToReadableValue(long number)
+        {
+            List<string> suffixes = new List<string> { " B", " KB", " MB", " GB", " TB", " PB" };
+
+            for (int i = 0; i < suffixes.Count; i++)
+            {
+                long temp = number / (int)Math.Pow(1024, i + 1);
+
+                if (temp == 0)
+                {
+                    return (number / (int)Math.Pow(1024, i)) + suffixes[i];
+                }
+            }
+
+            return number.ToString();
+        }
+        private static ExpandoObject GetProcessExtraInformation(int processId)
+        {
+            // Query the Win32_Process
+            string query = "Select * From Win32_Process Where ProcessID = " + processId;
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            // Create a dynamic object to store some properties on it
+            dynamic response = new ExpandoObject();
+            response.Description = "";
+            response.Username = "Unknown";
+
+            foreach (ManagementObject obj in processList)
+            {
+                // Retrieve username 
+                string[] argList = new string[] { string.Empty, string.Empty };
+                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                if (returnVal == 0)
+                {
+                    // return Username
+                    response.Username = argList[0];
+
+                    // You can return the domain too like (PCDesktop-123123\Username using instead
+                    //response.Username = argList[1] + "\\" + argList[0];
+                }
+
+                // Retrieve process description if exists
+                if (obj["ExecutablePath"] != null)
+                {
+                    try
+                    {
+                        FileVersionInfo info = FileVersionInfo.GetVersionInfo(obj["ExecutablePath"].ToString());
+                        response.Description = info.FileDescription;
+                    }
+                    catch { }
+                }
+            }
+
+            return response;
+        }
     }
+    
 }

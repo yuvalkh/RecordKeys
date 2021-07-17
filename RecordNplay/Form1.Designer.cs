@@ -85,6 +85,7 @@
             this.label19 = new System.Windows.Forms.Label();
             this.internalWait = new System.Windows.Forms.TextBox();
             this.copyLinesButton = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label4
@@ -247,10 +248,10 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Font = new System.Drawing.Font("Microsoft Uighur", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label3.Location = new System.Drawing.Point(-2, 427);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(115, 32);
+            this.label3.Size = new System.Drawing.Size(170, 29);
             this.label3.TabIndex = 21;
             this.label3.Text = "Made by Yuval";
             // 
@@ -624,11 +625,22 @@
             this.copyLinesButton.UseVisualStyleBackColor = true;
             this.copyLinesButton.Click += new System.EventHandler(this.copyLinesButton_Click);
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(904, 74);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(117, 36);
+            this.button1.TabIndex = 62;
+            this.button1.Text = "choose process";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click_1);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(910, 453);
+            this.ClientSize = new System.Drawing.Size(1033, 453);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.copyLinesButton);
             this.Controls.Add(this.label19);
             this.Controls.Add(this.internalWait);
@@ -750,6 +762,7 @@
         private System.Windows.Forms.Label label19;
         private System.Windows.Forms.TextBox internalWait;
         private System.Windows.Forms.Button copyLinesButton;
+        private System.Windows.Forms.Button button1;
     }
 }
 

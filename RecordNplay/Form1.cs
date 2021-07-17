@@ -247,7 +247,6 @@ namespace RecordNplay
                         {
                             if (jumped)
                             {
-                                //await Task.Delay(waitBetweenLoops);
                                 new ManualResetEvent(false).WaitOne(waitBetweenLoops);
                                 jumped = false;
                             }
@@ -256,12 +255,10 @@ namespace RecordNplay
                                 if (i == 0)
                                 {
                                     new ManualResetEvent(false).WaitOne((int)macroSteps[i].startTime);
-                                    //await Task.Delay((int)macroSteps[i].startTime);
                                 }
                                 else
                                 {
                                     new ManualResetEvent(false).WaitOne((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
-                                    //await Task.Delay((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
                                 }
                             }
                             if (!running)
@@ -284,7 +281,6 @@ namespace RecordNplay
                         while (KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
                         {
                             new ManualResetEvent(false).WaitOne(1);
-                            //await Task.Delay(1);
                         }
                         sw.Stop();
                         if (timeToWaitBetweenLoops > 0 && currentLoop + 1 < numOfLoops && running)
@@ -307,42 +303,15 @@ namespace RecordNplay
                         {
                             break;
                         }
-                        if (macroSteps[stepNumber].startTime <=sw.ElapsedMilliseconds)
+                        if (macroSteps[stepNumber].startTime <=sw.ElapsedMilliseconds) // Didn't use sleep for an option to stop right away
                         {
                             macroSteps[stepNumber].activate();
                             stepNumber++;
                         }
                     }
-
-
-
-
-                    /*for (int i = 0; i < macroSteps.Count && running; i++)
-                    {
-                        if (i == 0)
-                        {
-                            new ManualResetEvent(false).WaitOne((int)macroSteps[i].startTime);
-                            //await Task.Delay((int)macroSteps[i].startTime);
-                        }
-                        else
-                        {
-                            new ManualResetEvent(false).WaitOne((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
-                            //await Task.Delay((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
-                        }
-                        if (!running)
-                        {
-                            break;
-                        }
-                        if(macroSteps[i] is PressedKeyInfo)
-                        {
-                            Console.WriteLine("Pressed " + (Keys)((PressedKeyInfo)macroSteps[i]).keyCode + " at " + sw.ElapsedMilliseconds + " and need to be at " + macroSteps[i].startTime);
-                        }
-                        macroSteps[i].activate();
-                    }*/
-                    while (/*gkh.keysHolding.Count*/KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
+                    while (KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
                     {
                         new ManualResetEvent(false).WaitOne(1);
-                        //await Task.Delay(1);
                     }
                     sw.Stop();
                     if (timeToWaitBetweenLoops > 0 && currentLoop + 1 < numOfLoops && running)
@@ -354,6 +323,8 @@ namespace RecordNplay
             }
             running = false;
             sw = new EditableStopWatch(0);
+            MouseClicker.leaveLeftMouse(Cursor.Position.X, Cursor.Position.Y);
+            MouseClicker.leaveRighttMouse(Cursor.Position.X, Cursor.Position.Y);
         }
 
         private async void button3_Click(object sender, EventArgs e)
@@ -416,7 +387,6 @@ namespace RecordNplay
 
         private List<PressedInput> loadMacro(String fileName)
         {
-
             JsonSavedObject savedObject = JsonConvert.DeserializeObject<JsonSavedObject>(File.ReadAllText(fileName), new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -1244,6 +1214,11 @@ namespace RecordNplay
                 handledMacro.Last().startTime += macroEnd;
             }
             showMacroSteps(handledMacro);
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            TextDialog.showChooseProcessDialog();
         }
     }
 }

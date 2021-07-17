@@ -13,6 +13,14 @@ namespace RecordNplay
         public int x;
         public int y;
 
+        public PressedMouseInfo()
+        {
+            this.clickType = 1;
+            this.x = -1;
+            this.y = -1;
+            this.startTime = -1;
+        }
+
         public PressedMouseInfo(byte clickType, int x, int y,long startTime)
         {
             this.clickType = clickType;
