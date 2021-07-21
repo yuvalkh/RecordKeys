@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 namespace RecordNplay
 {
     [Serializable]
-    public class PressedMouseInfo : PressedInput
+    public class PressedMouseEvent : MacroEvent
     {
         public byte clickType;
         public int x;
         public int y;
 
-        public PressedMouseInfo()
+        public PressedMouseEvent()
         {
             this.clickType = 1;
             this.x = -1;
@@ -21,7 +21,7 @@ namespace RecordNplay
             this.startTime = -1;
         }
 
-        public PressedMouseInfo(byte clickType, int x, int y,long startTime)
+        public PressedMouseEvent(byte clickType, int x, int y,long startTime)
         {
             this.clickType = clickType;
             this.x = x;
@@ -29,7 +29,7 @@ namespace RecordNplay
             this.startTime = startTime;
         }
 
-        public PressedMouseInfo(PressedMouseInfo pressedInfo)
+        public PressedMouseEvent(PressedMouseEvent pressedInfo)
         {
             clickType = pressedInfo.clickType;
             x = pressedInfo.x;

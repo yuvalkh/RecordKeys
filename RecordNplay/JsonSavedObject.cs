@@ -8,10 +8,10 @@ namespace RecordNplay
 {
     class JsonSavedObject
     {
-        public List<PressedInput> list { get; set; }
+        public List<MacroEvent> list { get; set; }
         public string loop { get; set; }
         public string waitTime { get; set; }
-        public JsonSavedObject(List<PressedInput> list, string loop, string waitTime)
+        public JsonSavedObject(List<MacroEvent> list, string loop, string waitTime)
         {
             this.list = list;
             this.loop = loop;

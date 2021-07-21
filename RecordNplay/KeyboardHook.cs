@@ -60,7 +60,7 @@ namespace RecordNplay
             {
                 if (Form1.recording)
                 {
-                    PressedKeyInfo keyInfo = getLastOccurance(Form1.writingChars, (byte)e.KeyValue);
+                    PressedKeyEvent keyInfo = getLastOccurance(Form1.writingChars, (byte)e.KeyValue);
                     if (keyInfo != null)
                     {
                         keyInfo.duration = Form1.sw.ElapsedMilliseconds - keyInfo.startTime;
@@ -146,17 +146,17 @@ namespace RecordNplay
         {
             for (int i = 0; i < keysHolding.Count; i++)
             {
-                KeysWriter.sim.Keyboard.KeyUp((VirtualKeyCode)keysHolding[i]);
+                KeysClicker.sim.Keyboard.KeyUp((VirtualKeyCode)keysHolding[i]);
             }
         }
 
-        private PressedKeyInfo getLastOccurance(List<PressedInput> inputs, byte keyCode)
+        private PressedKeyEvent getLastOccurance(List<MacroEvent> inputs, byte keyCode)
         {
             for (int i = inputs.Count - 1; i >= 0; i--)
             {
-                if (inputs[i] is PressedKeyInfo && ((PressedKeyInfo)inputs[i]).keyCode == keyCode)
+                if (inputs[i] is PressedKeyEvent && ((PressedKeyEvent)inputs[i]).keyCode == keyCode)
                 {
-                    return ((PressedKeyInfo)inputs[i]);
+                    return ((PressedKeyEvent)inputs[i]);
                 }
             }
             return null;
@@ -166,7 +166,7 @@ namespace RecordNplay
         {
             if (!Form1.running && Form1.recording)
             {
-               Form1.writingChars.Add(new PressedKeyInfo((byte)e.KeyValue, 0, Form1.sw.ElapsedMilliseconds));
+               Form1.writingChars.Add(new PressedKeyEvent((byte)e.KeyValue, 0, Form1.sw.ElapsedMilliseconds));
             }
                 //Console.WriteLine("Down\t" + e.KeyCode.ToString());
             //e.Handled = true;

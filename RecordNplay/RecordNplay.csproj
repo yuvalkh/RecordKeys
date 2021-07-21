@@ -69,18 +69,17 @@
     </Compile>
     <Compile Include="JsonSavedObject.cs" />
     <Compile Include="KeyboardHook.cs" />
-    <Compile Include="KeysWriter.cs" />
-    <Compile Include="MacroEvent.cs" />
+    <Compile Include="KeysClicker.cs" />
     <Compile Include="MouseClicker.cs" />
     <Compile Include="MouseHook.cs" />
-    <Compile Include="PressedInput.cs" />
-    <Compile Include="PressedKeyInfo.cs" />
-    <Compile Include="PressedMouseInfo.cs" />
+    <Compile Include="MacroEvent.cs" />
+    <Compile Include="PressedKeyEvent.cs" />
+    <Compile Include="PressedMouseEvent.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Recorder.cs" />
+    <Compile Include="System\Windows\Point.cs" />
     <Compile Include="TextDialog.cs" />
-    <Compile Include="WaitEvent.cs" />
+    <Compile Include="WaitColorEvent.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>

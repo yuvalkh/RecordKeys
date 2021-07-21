@@ -21,13 +21,13 @@ namespace RecordNplay
         public static int totalTime = 0;
         public static EditableStopWatch sw = new EditableStopWatch(0);
         globalKeyboardHook gkh;
-        public static List<PressedInput> writingChars = new List<PressedInput>();
+        public static List<MacroEvent> writingChars = new List<MacroEvent>();
 
-        public static List<PressedInput> slot1;
-        public static List<PressedInput> slot2;
-        public static List<PressedInput> slot3;
+        public static List<MacroEvent> slot1;
+        public static List<MacroEvent> slot2;
+        public static List<MacroEvent> slot3;
 
-        public static List<PressedInput> whoIsHandled()
+        public static List<MacroEvent> whoIsHandled()
         {
             switch (handled)
             {
@@ -103,7 +103,7 @@ namespace RecordNplay
             {
                 recording = true;
                 numberOfMarkedLoop = 0;
-                writingChars = new List<PressedInput>();
+                writingChars = new List<MacroEvent>();
                 sw.Reset();
                 sw.Start();
                 MouseHook.Start();
@@ -182,7 +182,10 @@ namespace RecordNplay
 
         public static bool recording = false;
 
-        public async void runMacro(List<PressedInput> macroSteps, string loops, string waitTime)
+        public static int stepNumber = 0;
+
+
+        public async void runMacro(List<MacroEvent> macroSteps, string loops, string waitTime)
         {
             long numOfLoops;
             int timeToWaitBetweenLoops;
@@ -214,7 +217,7 @@ namespace RecordNplay
             }
             running = true;
             sw.Reset();
-            if (numberOfMarkedLoop > 0)
+            if (numberOfMarkedLoop > 0) // we need to do loops inside the macro
             {
                 int currentMiniLoop = 0;
                 int waitBetweenLoops;
@@ -272,13 +275,13 @@ namespace RecordNplay
                                 currentMiniLoop++;
                                 sw = new EditableStopWatch(macroSteps[startIndexLoop].startTime);
                                 jumped = true;
-                                while (KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
+                                while (KeysClicker.keysDown.Count > 0)//means we need to check if all keys finished
                                 {
                                     await Task.Delay(1);
                                 }
                             }
                         }
-                        while (KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
+                        while (KeysClicker.keysDown.Count > 0)//means we need to check if all keys finished
                         {
                             new ManualResetEvent(false).WaitOne(1);
                         }
@@ -296,7 +299,7 @@ namespace RecordNplay
                 for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)
                 {
                     sw.Start();
-                    int stepNumber = 0;
+                    stepNumber = 0;
                     while(stepNumber < macroSteps.Count)
                     {
                         if (!running)
@@ -305,13 +308,49 @@ namespace RecordNplay
                         }
                         if (macroSteps[stepNumber].startTime <=sw.ElapsedMilliseconds) // Didn't use sleep for an option to stop right away
                         {
+                            //check if it's the main macro (that we see in listview) and if so, mark the lines
+                            if (listView1.InvokeRequired)
+                            {
+                                listView1.Invoke((MethodInvoker)delegate ()
+                                {
+                                    if (stepNumber > 7)
+                                    {
+                                        listView1.TopItem = listView1.Items[stepNumber - 8];
+                                    }
+                                    listView1.Items[stepNumber].BackColor = Color.LightSteelBlue;
+                                    if (stepNumber > 0) 
+                                    {
+                                        listView1.Items[stepNumber-1].BackColor = Color.White;
+                                    }
+                                });
+                            }
+                            bool isWaitEvent = false;
+                            if (macroSteps[stepNumber] is WaitColorEvent) // if we need to wait, we stop our stopwatch
+                            {
+                                isWaitEvent = true;
+                                sw.Stop();
+                            }
                             macroSteps[stepNumber].activate();
+                            if (isWaitEvent) // we continue our stopwatch when we done waiting
+                            {
+                                sw.Start();
+                            }
                             stepNumber++;
                         }
                     }
-                    while (KeysWriter.keysDown.Count > 0)//means we need to check if all keys finished
+                    while (KeysClicker.keysDown.Count > 0)//means we need to check if all keys finished
                     {
                         new ManualResetEvent(false).WaitOne(1);
+                    }
+                    if (listView1.InvokeRequired)
+                    {
+                        listView1.Invoke((MethodInvoker)delegate ()
+                        {
+                            if (stepNumber > 0)
+                            {
+                                listView1.Items[stepNumber - 1].BackColor = Color.White;
+                            }
+                        });
                     }
                     sw.Stop();
                     if (timeToWaitBetweenLoops > 0 && currentLoop + 1 < numOfLoops && running)
@@ -329,14 +368,20 @@ namespace RecordNplay
 
         private async void button3_Click(object sender, EventArgs e)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             if(handledMacro == null || handledMacro.Count < 1)
             {
                 MessageBox.Show("There is no macro to repeat");
                 return;
             }
-            await countDownOnScreen(2);
-            runMacro(handledMacro, currentLoop.Text, currentWait.Text);
+            if (!running)
+            {
+                await countDownOnScreen(2);
+                new Thread(() =>
+                {
+                   runMacro(handledMacro, currentLoop.Text, currentWait.Text);
+                }).Start();
+            }
         }
 
         private void DeleteButton_Click(object sender, EventArgs e)
@@ -351,7 +396,7 @@ namespace RecordNplay
                 {
                     MessageBox.Show("Looks like the file isn't there anymore");
                 }
-                writingChars = new List<PressedInput>();
+                writingChars = new List<MacroEvent>();
                 listBox1.Items.RemoveAt(listBox1.SelectedIndex);
                 listView1.Items.Clear();
             }
@@ -364,7 +409,7 @@ namespace RecordNplay
 
         private void SaveMacro_Click(object sender, EventArgs e)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             if (handledMacro.Count < 1)
             {
                 MessageBox.Show("There is no macro to save");
@@ -385,7 +430,7 @@ namespace RecordNplay
             }
         }
 
-        private List<PressedInput> loadMacro(String fileName)
+        private List<MacroEvent> loadMacro(String fileName)
         {
             JsonSavedObject savedObject = JsonConvert.DeserializeObject<JsonSavedObject>(File.ReadAllText(fileName), new JsonSerializerSettings
             {
@@ -399,9 +444,9 @@ namespace RecordNplay
             return savedObject.list;
         }
 
-        private void saveMacro(List<PressedInput> listofa, String name, string currentLoop, string currentWait)
+        private void saveMacro(List<MacroEvent> listofa, String name, string currentLoop, string currentWait)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             JsonSerializer serializer = new JsonSerializer();
             serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
             serializer.NullValueHandling = NullValueHandling.Ignore;
@@ -434,16 +479,16 @@ namespace RecordNplay
 
         private bool checkIfTimeIsValid(long newTime, int index)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             if (index > 0)
             {
-                if (handledMacro[index] is PressedKeyInfo)
+                if (handledMacro[index] is PressedKeyEvent)
                 {
                     return newTime > handledMacro[index - 1].startTime;
                 }
                 else
                 {
-                    int clickType = ((PressedMouseInfo)handledMacro[index]).clickType;
+                    int clickType = ((PressedMouseEvent)handledMacro[index]).clickType;
                     int coupleIndex = getIndexOfCoupleClick(index, clickType);
                     if (clickType == 0 || clickType == 2)//start clicking
                     {
@@ -461,7 +506,7 @@ namespace RecordNplay
             }
         }
 
-        public void showMacroSteps(List<PressedInput> macroSteps)
+        public void showMacroSteps(List<MacroEvent> macroSteps)
         {
             if (macroSteps != null)
             {
@@ -485,142 +530,198 @@ namespace RecordNplay
 
         private void listView1_DoubleClick(object sender, EventArgs e)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             if (listView1.SelectedItems.Count == 1)
             {
                 int currentIndex = listView1.SelectedIndices[0];
-                if (handledMacro[currentIndex] is PressedKeyInfo)
+                long newStartTime;
+                long initialStartTime;
+                string[] newValueInString;
+                switch (handledMacro[currentIndex])
                 {
-                    PressedKeyInfo currentAsPKI = (PressedKeyInfo)handledMacro[currentIndex];
-                    long initialDuration = currentAsPKI.duration;
-                    byte initialKeycode = currentAsPKI.keyCode;
-                    long initialStartTime = currentAsPKI.startTime;
-                    string[] newValuesArray = TextDialog.ShowKeyEdit(initialDuration.ToString(), ((Keys)initialKeycode).ToString(), initialStartTime.ToString());
-                    if (newValuesArray != null && long.Parse(newValuesArray[1]) > 0 && newValuesArray[1].All(x => char.IsDigit(x)))
-                    {
-                        int newIndexToInsert = -1;
-                        bool changed = false;
-                        TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
-                        Keys key = (Keys)converter.ConvertFromString(newValuesArray[0]);
-                        byte newKeycode = (byte)key;
-                        long newDuration = long.Parse(newValuesArray[1]);
-                        long newStartTime = long.Parse(newValuesArray[2]);
-                        if (newKeycode != initialKeycode)
+                    case PressedKeyEvent currentAsPKI:
+                        long initialDuration = currentAsPKI.duration;
+                        byte initialKeycode = currentAsPKI.keyCode;
+                        initialStartTime = currentAsPKI.startTime;
+                        string[] newValuesArray = TextDialog.ShowKeyEdit(initialDuration.ToString(), ((Keys)initialKeycode).ToString(), initialStartTime.ToString());
+                        if (newValuesArray != null && long.Parse(newValuesArray[1]) > 0 && newValuesArray[1].All(x => char.IsDigit(x)))
                         {
-                            changed = true;
-                            currentAsPKI.keyCode = newKeycode;
-                        }
-                        if (newDuration != initialDuration)
-                        {
-                            changed = true;
-                            currentAsPKI.duration = newDuration;
-                        }
-                        if (newStartTime != initialStartTime)
-                        {
-                            if (newStartTime >= 0)
+                            int newIndexToInsert = -1;
+                            bool changed = false;
+                            TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
+                            Keys key = (Keys)converter.ConvertFromString(newValuesArray[0]);
+                            byte newKeycode = (byte)key;
+                            long newDuration = long.Parse(newValuesArray[1]);
+                            newStartTime = long.Parse(newValuesArray[2]);
+                            if (newKeycode != initialKeycode)
                             {
                                 changed = true;
-                                newIndexToInsert = findIndexOfInsert(newStartTime);
-                                currentAsPKI.startTime = newStartTime;
-                                if (newStartTime > initialStartTime)
+                                currentAsPKI.keyCode = newKeycode;
+                            }
+                            if (newDuration != initialDuration)
+                            {
+                                changed = true;
+                                currentAsPKI.duration = newDuration;
+                            }
+                            if (newStartTime != initialStartTime)
+                            {
+                                if (newStartTime >= 0)
                                 {
-                                    handledMacro.Insert(newIndexToInsert, currentAsPKI);
-                                    handledMacro.RemoveAt(currentIndex);
+                                    changed = true;
+                                    newIndexToInsert = findIndexOfInsert(newStartTime);
+                                    currentAsPKI.startTime = newStartTime;
+                                    if (newStartTime > initialStartTime)
+                                    {
+                                        handledMacro.Insert(newIndexToInsert, currentAsPKI);
+                                        handledMacro.RemoveAt(currentIndex);
+                                    }
+                                    else
+                                    {
+                                        handledMacro.RemoveAt(currentIndex);
+                                        handledMacro.Insert(newIndexToInsert, currentAsPKI);
+                                    }
+
                                 }
                                 else
                                 {
-                                    handledMacro.RemoveAt(currentIndex);
-                                    handledMacro.Insert(newIndexToInsert, currentAsPKI);
+                                    MessageBox.Show("Time can't be less than 0");
                                 }
-
                             }
-                            else
+                            if (changed)
                             {
-                                MessageBox.Show("Time can't be less than 0");
+                                showMacroSteps(handledMacro);
                             }
                         }
-                        if (changed)
+                        else
                         {
-                            showMacroSteps(handledMacro);
-                        }
-                    }
-                    else
-                    {
-                        if (newValuesArray != null)
-                        {
-                            MessageBox.Show("Duration must be greater than 0 and digits only");
-                        }
-                    }
-                }
-                else
-                {
-                    PressedMouseInfo infoAsMouse = ((PressedMouseInfo)handledMacro[currentIndex]);
-                    long initialStartTime = handledMacro[currentIndex].startTime;
-                    long newStartTime;
-                    string initialClickType;
-                    string newClickType;
-                    int initialX = infoAsMouse.x;
-                    int newX;
-                    int initialY = infoAsMouse.y;
-                    int newY;
-                    if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
-                    {
-                        initialClickType = "Right Click";
-                    }
-                    else
-                    {
-                        initialClickType = "Left Click";
-                    }
-                    string[] newValueInString = TextDialog.ShowMouseEdit(infoAsMouse.clickType, infoAsMouse.startTime.ToString(), initialX.ToString(), initialY.ToString());
-                    if (newValueInString != null && !newValueInString[0].Equals("") && !newValueInString[0].Equals("") && newValueInString[1].All(x => char.IsDigit(x)) && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)))
-                    {
-                        bool changed = false;
-                        newClickType = newValueInString[0];
-                        newStartTime = int.Parse(newValueInString[1]);
-                        newX = int.Parse(newValueInString[2]);
-                        newY = int.Parse(newValueInString[3]);
-                        if (newStartTime != initialStartTime && checkIfTimeIsValid(newStartTime, currentIndex))
-                        {
-                            handledMacro[currentIndex].startTime = newStartTime;
-                            changed = true;
-                        }
-                        if (!initialClickType.Equals(newClickType))
-                        {
-                            changed = true;
-                            int coupleIndex = getIndexOfCoupleClick(currentIndex, infoAsMouse.clickType);
-                            if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
+                            if (newValuesArray != null)
                             {
-                                infoAsMouse.clickType -= 2;
-                                ((PressedMouseInfo)handledMacro[coupleIndex]).clickType -= 2;
+                                MessageBox.Show("Duration must be greater than 0 and digits only");
                             }
-                            else
+                        }
+                        break;
+                    case PressedMouseEvent infoAsMouse:
+                        initialStartTime = handledMacro[currentIndex].startTime;
+                        string initialClickType;
+                        string newClickType;
+                        int initialX = infoAsMouse.x;
+                        int newX;
+                        int initialY = infoAsMouse.y;
+                        int newY;
+                        if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
+                        {
+                            initialClickType = "Right Click";
+                        }
+                        else
+                        {
+                            initialClickType = "Left Click";
+                        }
+                        newValueInString = TextDialog.ShowMouseEdit(infoAsMouse.clickType, infoAsMouse.startTime.ToString(), initialX.ToString(), initialY.ToString());
+                        if (newValueInString != null && !newValueInString[0].Equals("") && newValueInString[1].All(x => char.IsDigit(x)) && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)))
+                        {
+                            bool changed = false;
+                            newClickType = newValueInString[0];
+                            newStartTime = int.Parse(newValueInString[1]);
+                            newX = int.Parse(newValueInString[2]);
+                            newY = int.Parse(newValueInString[3]);
+                            if (newStartTime != initialStartTime && checkIfTimeIsValid(newStartTime, currentIndex))
                             {
-                                infoAsMouse.clickType += 2;
-                                ((PressedMouseInfo)handledMacro[coupleIndex]).clickType += 2;
+                                handledMacro[currentIndex].startTime = newStartTime;
+                                changed = true;
+                            }
+                            if (!initialClickType.Equals(newClickType))
+                            {
+                                changed = true;
+                                int coupleIndex = getIndexOfCoupleClick(currentIndex, infoAsMouse.clickType);
+                                if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
+                                {
+                                    infoAsMouse.clickType -= 2;
+                                    ((PressedMouseEvent)handledMacro[coupleIndex]).clickType -= 2;
+                                }
+                                else
+                                {
+                                    infoAsMouse.clickType += 2;
+                                    ((PressedMouseEvent)handledMacro[coupleIndex]).clickType += 2;
+                                }
+                            }
+                            if (initialX != newX)
+                            {
+                                infoAsMouse.x = newX;
+                                changed = true;
+                            }
+                            if (initialY != newY)
+                            {
+                                infoAsMouse.y = newY;
+                                changed = true;
+                            }
+                            if (changed)
+                            {
+                                showMacroSteps(handledMacro);
                             }
                         }
-                        if (initialX != newX)
+                        else
                         {
-                            infoAsMouse.x = newX;
-                            changed = true;
+                            if (newValueInString != null)
+                            {
+                                MessageBox.Show("Problem with the time entered");
+                            }
                         }
-                        if (initialY != newY)
+                        break;
+                    case WaitColorEvent infoAsWaitColor:
+                        //Time,x,y,red,green,blue,contrary
+                        newValuesArray = TextDialog.ShowWaitColorEdit(infoAsWaitColor.color.R, infoAsWaitColor.color.G, infoAsWaitColor.color.B, infoAsWaitColor.startTime.ToString(), infoAsWaitColor.x.ToString(), infoAsWaitColor.y.ToString(), infoAsWaitColor.contrary.ToString());
+                        if (newValuesArray != null && newValuesArray[0].All(x => char.IsDigit(x)) && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)))
                         {
-                            infoAsMouse.y = newY;
-                            changed = true;
+                            bool changed = false;
+                            if (long.Parse(newValuesArray[0]) != infoAsWaitColor.startTime)
+                            {
+                                changed = true;
+                                infoAsWaitColor.startTime = long.Parse(newValuesArray[0]);
+                            }
+                            if (long.Parse(newValuesArray[1]) != infoAsWaitColor.x)
+                            {
+                                changed = true;
+                                infoAsWaitColor.x = int.Parse(newValuesArray[1]);
+                            }
+                            if (long.Parse(newValuesArray[2]) != infoAsWaitColor.y)
+                            {
+                                changed = true;
+                                infoAsWaitColor.y = int.Parse(newValuesArray[2]);
+                            }
+                            Color newColor = Color.FromArgb(int.Parse(newValuesArray[3]), int.Parse(newValuesArray[4]), int.Parse(newValuesArray[5]));
+                            if (!newColor.Equals(infoAsWaitColor.color))
+                            {
+                                changed = true;
+                                infoAsWaitColor.color = newColor;
+                            }
+                            if (!infoAsWaitColor.contrary.ToString().Equals(newValuesArray[6]))
+                            {
+                                changed = true;
+                                if (newValuesArray[6] == "True")
+                                {
+                                    infoAsWaitColor.contrary = true;
+                                }
+                                else
+                                {
+                                    infoAsWaitColor.contrary = false;
+                                }
+                            }
+                            if (changed) // only if we changed something we update the macro steps
+                            {
+                                showMacroSteps(handledMacro);
+                            }
                         }
-                        if (changed)
+                        else
                         {
-                            showMacroSteps(handledMacro);
+                            if (newValuesArray != null)
+                            {
+                                MessageBox.Show("Problem with the data entered");
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (newValueInString != null)
-                        {
-                            MessageBox.Show("Problem with the time entered");
-                        }
-                    }
+                        break;
+                    default:
+                        MessageBox.Show("I don't know how to update this event");
+                        break;
                 }
             }
             listView1.Refresh();
@@ -642,18 +743,18 @@ namespace RecordNplay
 
         private void DeleteStep_Click(object sender, EventArgs e)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             if (listView1.SelectedItems.Count == 1)
             {
                 int currentIndex = listView1.SelectedIndices[0];
-                if (handledMacro[currentIndex] is PressedKeyInfo)
+                if (handledMacro[currentIndex] is PressedKeyEvent)
                 {
                     handledMacro.RemoveAt(currentIndex);
                     updateIndexesOnDeleteStep(currentIndex);
                 }
                 else
                 {
-                    int coupleIndex = getIndexOfCoupleClick(currentIndex, ((PressedMouseInfo)handledMacro[currentIndex]).clickType);
+                    int coupleIndex = getIndexOfCoupleClick(currentIndex, ((PressedMouseEvent)handledMacro[currentIndex]).clickType);
                     if (coupleIndex > currentIndex)//mouse down
                     {
                         handledMacro.RemoveAt(coupleIndex);
@@ -682,15 +783,15 @@ namespace RecordNplay
 
         private int getIndexOfCoupleClick(int currentIndex, int clickType)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
-            if (handledMacro[currentIndex] is PressedMouseInfo)
+            List<MacroEvent> handledMacro = whoIsHandled();
+            if (handledMacro[currentIndex] is PressedMouseEvent)
             {
-                PressedMouseInfo infoAsMouse = (PressedMouseInfo)handledMacro[currentIndex];
+                PressedMouseEvent infoAsMouse = (PressedMouseEvent)handledMacro[currentIndex];
                 if (infoAsMouse.clickType == 0)//left Mouse Down
                 {
                     for (int i = currentIndex + 1; i < handledMacro.Count; i++)
                     {
-                        if (handledMacro[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 1)
+                        if (handledMacro[i] is PressedMouseEvent nextMouseInfo && nextMouseInfo.clickType == 1)
                         {
                             return i;
                         }
@@ -700,7 +801,7 @@ namespace RecordNplay
                 {
                     for (int i = currentIndex - 1; i >= 0; i--)
                     {
-                        if (handledMacro[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 0)
+                        if (handledMacro[i] is PressedMouseEvent nextMouseInfo && nextMouseInfo.clickType == 0)
                         {
                             return i;
                         }
@@ -710,7 +811,7 @@ namespace RecordNplay
                 {
                     for (int i = currentIndex + 1; i < handledMacro.Count; i++)
                     {
-                        if (handledMacro[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 3)
+                        if (handledMacro[i] is PressedMouseEvent nextMouseInfo && nextMouseInfo.clickType == 3)
                         {
                             return i;
                         }
@@ -720,7 +821,7 @@ namespace RecordNplay
                 {
                     for (int i = currentIndex - 1; i >= 0; i--)
                     {
-                        if (handledMacro[i] is PressedMouseInfo nextMouseInfo && nextMouseInfo.clickType == 2)
+                        if (handledMacro[i] is PressedMouseEvent nextMouseInfo && nextMouseInfo.clickType == 2)
                         {
                             return i;
                         }
@@ -732,21 +833,25 @@ namespace RecordNplay
 
         private void AddStep_Click(object sender, EventArgs e)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
+            int insertIndex;
+            int startTime,x,y;
             string[] info = TextDialog.ShowAdd();
-            if (info != null)
+            if (info == null)
             {
-                if (info.Count() == 3)//it's keyboard
-                {
+                return;
+            }
+            switch (info.Count())
+            {
+                case 3: //Keyboard Press Event
                     TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
                     Keys key = (Keys)converter.ConvertFromString(info[0]);
                     byte newKeycode = (byte)key;
-                    int insertIndex = findIndexOfInsert(int.Parse(info[2]));
-                    handledMacro.Insert(insertIndex, new PressedKeyInfo(newKeycode, long.Parse(info[1]), long.Parse(info[2])));
+                    insertIndex = findIndexOfInsert(int.Parse(info[2]));
+                    handledMacro.Insert(insertIndex, new PressedKeyEvent(newKeycode, long.Parse(info[1]), long.Parse(info[2])));
                     listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
-                }
-                else//it's a mouse
-                {
+                    break;
+                case 4: // Mouse Press Event
                     byte clickType;
                     if (info[0].Equals("Left Click"))
                     {
@@ -756,23 +861,41 @@ namespace RecordNplay
                     {
                         clickType = 2;
                     }
-                    int startTime = int.Parse(info[1]);
-                    int x = int.Parse(info[2]);
-                    int y = int.Parse(info[3]);
-                    int insertIndex = findIndexOfInsert(startTime);
-                    handledMacro.Insert(insertIndex, new PressedMouseInfo(clickType, x, y, startTime));
+                    startTime = int.Parse(info[1]);
+                    x = int.Parse(info[2]);
+                    y = int.Parse(info[3]);
+                    insertIndex = findIndexOfInsert(startTime);
+                    handledMacro.Insert(insertIndex, new PressedMouseEvent(clickType, x, y, startTime));
                     listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
-                    insertIndex = findIndexOfInsert(startTime + 100);
-                    handledMacro.Insert(insertIndex, new PressedMouseInfo(++clickType, x, y, startTime + 100));
+                    insertIndex = findIndexOfInsert(startTime + 1);
+                    handledMacro.Insert(insertIndex, new PressedMouseEvent(++clickType, x, y, startTime + 100));
                     listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
-                }
-                listView1.Refresh();
+                    break;
+                case 7: //Wait Color Event
+                    //Time,x,y,red,green,blue,contrary
+                    startTime = int.Parse(info[0]);
+                    x = int.Parse(info[1]);
+                    y = int.Parse(info[2]);
+                    int red = int.Parse(info[3]);
+                    int green = int.Parse(info[4]);
+                    int blue = int.Parse(info[5]);
+                    bool contrary = false;
+                    if (info[6] == "True")
+                    {
+                        contrary = true;
+                    }
+                    insertIndex = findIndexOfInsert(startTime);
+                    handledMacro.Insert(insertIndex, new WaitColorEvent(startTime,red, green, blue, x, y,contrary));
+                    listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
+                    break;
+                default: // if exit without choosing anything
+                    break;
             }
         }
 
         public static int findIndexOfInsert(long startTime)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             int index = 0;
             for (int i = 0; i < handledMacro.Count; i++)
             {
@@ -922,7 +1045,7 @@ namespace RecordNplay
 
         private void changeStart_Click(object sender, EventArgs e)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             if (handled != null && handledMacro.Count > 0)
             {
                 int oldStartTime = int.Parse(handledMacro[0].startTime.ToString());
@@ -959,7 +1082,7 @@ namespace RecordNplay
 
         private void makeMacroFast_Click(object sender, EventArgs e)
         {
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             if(handledMacro == null || handledMacro.Count < 1)
             {
                 MessageBox.Show("You can't make macro faster if you don't have a macro");
@@ -969,11 +1092,11 @@ namespace RecordNplay
             for (int i = 0; i < handledMacro.Count; i++)
             {
                 howManyInclude.Add(0);
-                if(!(handledMacro[i] is PressedKeyInfo))
+                if(!(handledMacro[i] is PressedKeyEvent))
                 {
                     continue;
                 }
-                int whenEnd = (int)(((PressedKeyInfo)handledMacro[i]).startTime + ((PressedKeyInfo)handledMacro[i]).duration);
+                int whenEnd = (int)(((PressedKeyEvent)handledMacro[i]).startTime + ((PressedKeyEvent)handledMacro[i]).duration);
                 for (int j = i+1; j < handledMacro.Count; j++)
                 {
                     if(whenEnd >= handledMacro[j].startTime)
@@ -985,9 +1108,9 @@ namespace RecordNplay
             for (int i = 0; i < handledMacro.Count; i++)
             {
                 handledMacro[i].startTime = i*5;
-                if(handledMacro[i] is PressedKeyInfo)
+                if(handledMacro[i] is PressedKeyEvent)
                 {
-                    ((PressedKeyInfo)handledMacro[i]).duration = howManyInclude[i] > 0 ? 5 + (5 * howManyInclude[i] - 2) : 5;
+                    ((PressedKeyEvent)handledMacro[i]).duration = howManyInclude[i] > 0 ? 5 + (5 * howManyInclude[i] - 2) : 5;
                 }
             }
             showMacroSteps(handledMacro);
@@ -1092,7 +1215,7 @@ namespace RecordNplay
                 MessageBox.Show("You need to select mouse pressed couple as well(in example you marked only mouse release or pressed without the other one)");
                 return;
             }
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             foreach (int index in listView1.SelectedIndices)
             {
                 if (!listView1.Items[index].BackColor.Equals(Color.Lime))
@@ -1128,7 +1251,7 @@ namespace RecordNplay
                 MessageBox.Show("You need to select mouse pressed couple as well(in example you marked only mouse release or pressed without the other one)");
                 return;
             }
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             foreach (int index in listView1.SelectedIndices)
             {
                 if (!listView1.Items[index].BackColor.ToKnownColor().Equals(Color.White.ToKnownColor()))
@@ -1164,10 +1287,10 @@ namespace RecordNplay
             {
                 return true;
             }
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             foreach (int index in listView1.SelectedIndices)
             {
-                if (handledMacro[index] is PressedMouseInfo asPressedMouse && !listView1.SelectedIndices.Contains(getIndexOfCoupleClick(index,asPressedMouse.clickType)))
+                if (handledMacro[index] is PressedMouseEvent asPressedMouse && !listView1.SelectedIndices.Contains(getIndexOfCoupleClick(index,asPressedMouse.clickType)))
                 {
                     return false;
                 }
@@ -1191,9 +1314,9 @@ namespace RecordNplay
                 MessageBox.Show("You need to select mouse pressed couple as well(in example you marked only mouse release or pressed without the other one)");
                 return;
             }
-            List<PressedInput> handledMacro = whoIsHandled();
+            List<MacroEvent> handledMacro = whoIsHandled();
             long macroEnd;
-            if (handledMacro.Last() is PressedKeyInfo lastAsPressedKey)
+            if (handledMacro.Last() is PressedKeyEvent lastAsPressedKey)
             {
                 macroEnd = lastAsPressedKey.startTime + lastAsPressedKey.duration + 1;
             }
@@ -1203,13 +1326,13 @@ namespace RecordNplay
             }
             foreach (int index in listView1.SelectedIndices)
             {
-                if (handledMacro[index] is PressedKeyInfo asPressedKey)
+                if (handledMacro[index] is PressedKeyEvent asPressedKey)
                 {
-                    handledMacro.Add(new PressedKeyInfo(asPressedKey));
+                    handledMacro.Add(new PressedKeyEvent(asPressedKey));
                 }
                 else
                 {
-                    handledMacro.Add(new PressedMouseInfo((PressedMouseInfo)handledMacro[index]));
+                    handledMacro.Add(new PressedMouseEvent((PressedMouseEvent)handledMacro[index]));
                 }
                 handledMacro.Last().startTime += macroEnd;
             }

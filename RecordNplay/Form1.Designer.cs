@@ -78,7 +78,6 @@
             this.showMacro2 = new System.Windows.Forms.Button();
             this.showMacro3 = new System.Windows.Forms.Button();
             this.showCurrent = new System.Windows.Forms.Button();
-            this.setLoopButton = new System.Windows.Forms.Button();
             this.removeLoopButton = new System.Windows.Forms.Button();
             this.internalLoop = new System.Windows.Forms.TextBox();
             this.label18 = new System.Windows.Forms.Label();
@@ -86,6 +85,7 @@
             this.internalWait = new System.Windows.Forms.TextBox();
             this.copyLinesButton = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
+            this.setLoopButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label4
@@ -194,7 +194,7 @@
             this.listView1.HideSelection = false;
             this.listView1.Location = new System.Drawing.Point(500, 73);
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(300, 308);
+            this.listView1.Size = new System.Drawing.Size(417, 308);
             this.listView1.TabIndex = 15;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.DoubleClick += new System.EventHandler(this.listView1_DoubleClick);
@@ -561,19 +561,9 @@
             this.showCurrent.UseVisualStyleBackColor = true;
             this.showCurrent.Click += new System.EventHandler(this.showCurrent_Click);
             // 
-            // setLoopButton
-            // 
-            this.setLoopButton.Location = new System.Drawing.Point(806, 73);
-            this.setLoopButton.Name = "setLoopButton";
-            this.setLoopButton.Size = new System.Drawing.Size(92, 59);
-            this.setLoopButton.TabIndex = 55;
-            this.setLoopButton.Text = "Set Lines On Loop";
-            this.setLoopButton.UseVisualStyleBackColor = true;
-            this.setLoopButton.Click += new System.EventHandler(this.setLoopButton_Click);
-            // 
             // removeLoopButton
             // 
-            this.removeLoopButton.Location = new System.Drawing.Point(806, 138);
+            this.removeLoopButton.Location = new System.Drawing.Point(924, 138);
             this.removeLoopButton.Name = "removeLoopButton";
             this.removeLoopButton.Size = new System.Drawing.Size(92, 59);
             this.removeLoopButton.TabIndex = 56;
@@ -583,7 +573,7 @@
             // 
             // internalLoop
             // 
-            this.internalLoop.Location = new System.Drawing.Point(806, 257);
+            this.internalLoop.Location = new System.Drawing.Point(924, 257);
             this.internalLoop.Name = "internalLoop";
             this.internalLoop.Size = new System.Drawing.Size(100, 22);
             this.internalLoop.TabIndex = 57;
@@ -592,7 +582,7 @@
             // label18
             // 
             this.label18.AutoSize = true;
-            this.label18.Location = new System.Drawing.Point(806, 200);
+            this.label18.Location = new System.Drawing.Point(924, 200);
             this.label18.Name = "label18";
             this.label18.Size = new System.Drawing.Size(74, 51);
             this.label18.TabIndex = 58;
@@ -601,7 +591,7 @@
             // label19
             // 
             this.label19.AutoSize = true;
-            this.label19.Location = new System.Drawing.Point(806, 282);
+            this.label19.Location = new System.Drawing.Point(924, 282);
             this.label19.Name = "label19";
             this.label19.Size = new System.Drawing.Size(96, 51);
             this.label19.TabIndex = 60;
@@ -609,7 +599,7 @@
             // 
             // internalWait
             // 
-            this.internalWait.Location = new System.Drawing.Point(806, 339);
+            this.internalWait.Location = new System.Drawing.Point(924, 339);
             this.internalWait.Name = "internalWait";
             this.internalWait.Size = new System.Drawing.Size(100, 22);
             this.internalWait.TabIndex = 59;
@@ -617,7 +607,7 @@
             // 
             // copyLinesButton
             // 
-            this.copyLinesButton.Location = new System.Drawing.Point(805, 372);
+            this.copyLinesButton.Location = new System.Drawing.Point(923, 372);
             this.copyLinesButton.Name = "copyLinesButton";
             this.copyLinesButton.Size = new System.Drawing.Size(93, 69);
             this.copyLinesButton.TabIndex = 61;
@@ -627,7 +617,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(904, 74);
+            this.button1.Location = new System.Drawing.Point(1022, 74);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(117, 36);
             this.button1.TabIndex = 62;
@@ -635,11 +625,21 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click_1);
             // 
+            // setLoopButton
+            // 
+            this.setLoopButton.Location = new System.Drawing.Point(924, 73);
+            this.setLoopButton.Name = "setLoopButton";
+            this.setLoopButton.Size = new System.Drawing.Size(92, 59);
+            this.setLoopButton.TabIndex = 55;
+            this.setLoopButton.Text = "Set Lines On Loop";
+            this.setLoopButton.UseVisualStyleBackColor = true;
+            this.setLoopButton.Click += new System.EventHandler(this.setLoopButton_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1033, 453);
+            this.ClientSize = new System.Drawing.Size(1144, 453);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.copyLinesButton);
             this.Controls.Add(this.label19);
@@ -755,7 +755,6 @@
         private System.Windows.Forms.Button showMacro2;
         private System.Windows.Forms.Button showMacro3;
         private System.Windows.Forms.Button showCurrent;
-        private System.Windows.Forms.Button setLoopButton;
         private System.Windows.Forms.Button removeLoopButton;
         private System.Windows.Forms.TextBox internalLoop;
         private System.Windows.Forms.Label label18;
@@ -763,6 +762,7 @@
         private System.Windows.Forms.TextBox internalWait;
         private System.Windows.Forms.Button copyLinesButton;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button setLoopButton;
     }
 }
 

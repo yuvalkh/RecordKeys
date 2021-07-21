@@ -12,25 +12,17 @@ using WindowsInput;
 
 namespace RecordNplay
 {
-    static class KeysWriter
+    static class KeysClicker
     {
         public static List<Keys> keysDown = new List<Keys>();
         public static InputSimulator sim = new InputSimulator();
         public static void holdKey(byte keyCode,int duration)
         {
-            
-            //Stopwatch sw = new Stopwatch();
-            //sw.Start();
             InputManager.Keyboard.KeyDown((Keys)keyCode);
             keysDown.Add((Keys)keyCode);
-            //sim.Keyboard.KeyDown((VirtualKeyCode)keyCode);
-            //sim.Keyboard.Sleep(duration);
-            //await Task.Delay(duration);
             new ManualResetEvent(false).WaitOne(duration);
-            //while (sw.ElapsedMilliseconds < duration) { }
             InputManager.Keyboard.KeyUp((Keys)keyCode);
             keysDown.Remove((Keys)keyCode);
-            //sim.Keyboard.KeyUp((VirtualKeyCode)keyCode);
             //Console.WriteLine("Wrote the letter:" + (char)keyCode);
         }
     }
