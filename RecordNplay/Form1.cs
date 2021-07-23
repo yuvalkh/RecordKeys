@@ -14,9 +14,6 @@ namespace RecordNplay
 {
     public partial class Form1 : Form
     {
-        int numberOfMarkedLoop;
-        int startIndexLoop = 0;
-        int endIndexLoop = 0;
         public static string handled = "writingChars";
         public static int totalTime = 0;
         public static EditableStopWatch sw = new EditableStopWatch(0);
@@ -66,6 +63,7 @@ namespace RecordNplay
             gkh.hook();
         }
 
+        // Function to set every ComboBox its keys (the shortcut keys that can start a macro)
         private void setTriggerComboBox(ComboBox comboBox)
         {
             comboBox.Items.Add("None");
@@ -94,7 +92,7 @@ namespace RecordNplay
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            //currently doing nothing, but probably will add some stuff here
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -102,7 +100,6 @@ namespace RecordNplay
             if (!recording)
             {
                 recording = true;
-                numberOfMarkedLoop = 0;
                 writingChars = new List<MacroEvent>();
                 sw.Reset();
                 sw.Start();
@@ -120,7 +117,6 @@ namespace RecordNplay
                 MouseHook.stop();
                 showMacroSteps(writingChars);
                 handled = "writingChars";
-                startIndexLoop = writingChars.Count;
             }
         }
 
@@ -185,9 +181,9 @@ namespace RecordNplay
         public static int stepNumber = 0;
 
 
-        public async void runMacro(List<MacroEvent> macroSteps, string loops, string waitTime)
+        public void runMacro(List<MacroEvent> macroSteps, string loops, string waitTime)
         {
-            long numOfLoops;
+            long numOfLoops; // number of times we need to run over the macro
             int timeToWaitBetweenLoops;
             try
             {
@@ -205,7 +201,7 @@ namespace RecordNplay
             }
             if (numOfLoops < 0)
             {
-                if (numOfLoops == -1)
+                if (numOfLoops == -1) // we set the number of runs to be infinite (max long)
                 {
                     numOfLoops = long.MaxValue;
                 }
@@ -217,151 +213,73 @@ namespace RecordNplay
             }
             running = true;
             sw.Reset();
-            if (numberOfMarkedLoop > 0) // we need to do loops inside the macro
+            for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)
             {
-                int currentMiniLoop = 0;
-                int waitBetweenLoops;
-                int repeatLoop;
-                try
+                sw.Start();
+                stepNumber = 0;
+                while (stepNumber < macroSteps.Count)
                 {
-                    repeatLoop = int.Parse(internalLoop.Text);
-                    if (repeatLoop < 0)
+                    if (!running) // we always check if we still need to run (maybe the user pressed esc)
                     {
-                        throw new Exception();
+                        break;
                     }
-                    waitBetweenLoops = int.Parse(internalWait.Text);
-                    if (waitBetweenLoops < 0)
+                    if (macroSteps[stepNumber].startTime <= sw.ElapsedMilliseconds) // Didn't use sleep for an option to stop right away
                     {
-                        throw new Exception();
-                    }
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("There is a problem with the time wait or with the loop count in mini loops");
-                    return;
-                }
-                for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)
-                {
-                    if (macroSteps == whoIsHandled())//we run macro that is in instructos and it has loops
-                    {
-                        sw.Start();
-                        bool jumped = false;
-                        for (int i = 0; i < macroSteps.Count && running; i++)
+                        //check if it's the main macro (that we see in listview) and if so, mark the ongoing line
+                        if (listView1.InvokeRequired)
                         {
-                            if (jumped)
+                            listView1.Invoke((MethodInvoker)delegate ()
                             {
-                                new ManualResetEvent(false).WaitOne(waitBetweenLoops);
-                                jumped = false;
-                            }
-                            else
-                            {
-                                if (i == 0)
+                                if (stepNumber > 7)
                                 {
-                                    new ManualResetEvent(false).WaitOne((int)macroSteps[i].startTime);
+                                    listView1.TopItem = listView1.Items[stepNumber - 8];
                                 }
-                                else
+                                listView1.Items[stepNumber].BackColor = Color.LightSteelBlue;
+                                if (stepNumber > 0)
                                 {
-                                    new ManualResetEvent(false).WaitOne((int)(macroSteps[i].startTime - macroSteps[i - 1].startTime));
+                                    listView1.Items[stepNumber - 1].BackColor = Color.White;
                                 }
-                            }
-                            if (!running)
-                            {
-                                break;
-                            }
-                            macroSteps[i].activate();
-                            if (i == endIndexLoop && currentMiniLoop < repeatLoop)
-                            {
-                                i = startIndexLoop - 1;
-                                currentMiniLoop++;
-                                sw = new EditableStopWatch(macroSteps[startIndexLoop].startTime);
-                                jumped = true;
-                                while (KeysClicker.keysDown.Count > 0)//means we need to check if all keys finished
-                                {
-                                    await Task.Delay(1);
-                                }
-                            }
+                            });
                         }
-                        while (KeysClicker.keysDown.Count > 0)//means we need to check if all keys finished
+                        bool isWaitEvent = false;
+                        if (macroSteps[stepNumber] is WaitColorEvent) // if we need to wait, we stop our stopwatch
                         {
-                            new ManualResetEvent(false).WaitOne(1);
+                            isWaitEvent = true;
+                            sw.Stop();
                         }
-                        sw.Stop();
-                        if (timeToWaitBetweenLoops > 0 && currentLoop + 1 < numOfLoops && running)
+                        macroSteps[stepNumber].activate();
+                        if (isWaitEvent) // we continue our stopwatch when we done waiting
                         {
-                            Thread.Sleep(timeToWaitBetweenLoops);
+                            sw.Start();
                         }
-                        sw.Reset();
+                        stepNumber++;
                     }
                 }
-            }
-            else
-            {
-                for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)
+                while (KeysClicker.keysDown.Count > 0)//means we need to check if all keys finished
                 {
-                    sw.Start();
-                    stepNumber = 0;
-                    while(stepNumber < macroSteps.Count)
-                    {
-                        if (!running)
-                        {
-                            break;
-                        }
-                        if (macroSteps[stepNumber].startTime <=sw.ElapsedMilliseconds) // Didn't use sleep for an option to stop right away
-                        {
-                            //check if it's the main macro (that we see in listview) and if so, mark the lines
-                            if (listView1.InvokeRequired)
-                            {
-                                listView1.Invoke((MethodInvoker)delegate ()
-                                {
-                                    if (stepNumber > 7)
-                                    {
-                                        listView1.TopItem = listView1.Items[stepNumber - 8];
-                                    }
-                                    listView1.Items[stepNumber].BackColor = Color.LightSteelBlue;
-                                    if (stepNumber > 0) 
-                                    {
-                                        listView1.Items[stepNumber-1].BackColor = Color.White;
-                                    }
-                                });
-                            }
-                            bool isWaitEvent = false;
-                            if (macroSteps[stepNumber] is WaitColorEvent) // if we need to wait, we stop our stopwatch
-                            {
-                                isWaitEvent = true;
-                                sw.Stop();
-                            }
-                            macroSteps[stepNumber].activate();
-                            if (isWaitEvent) // we continue our stopwatch when we done waiting
-                            {
-                                sw.Start();
-                            }
-                            stepNumber++;
-                        }
-                    }
-                    while (KeysClicker.keysDown.Count > 0)//means we need to check if all keys finished
-                    {
-                        new ManualResetEvent(false).WaitOne(1);
-                    }
-                    if (listView1.InvokeRequired)
-                    {
-                        listView1.Invoke((MethodInvoker)delegate ()
-                        {
-                            if (stepNumber > 0)
-                            {
-                                listView1.Items[stepNumber - 1].BackColor = Color.White;
-                            }
-                        });
-                    }
-                    sw.Stop();
-                    if (timeToWaitBetweenLoops > 0 && currentLoop + 1 < numOfLoops && running)
-                    {
-                        Thread.Sleep(timeToWaitBetweenLoops);
-                    }
-                    sw.Reset();
+                    new ManualResetEvent(false).WaitOne(1);
                 }
+                if (listView1.InvokeRequired)
+                {
+                    listView1.Invoke((MethodInvoker)delegate ()
+                    {
+                        if (stepNumber > 0) // at the end, we change the last line to white
+                        {
+                            listView1.Items[stepNumber - 1].BackColor = Color.White;
+                        }
+                    });
+                }
+                sw.Stop();
+                // check if we have more loops, and if so, we sleep the amount of time the user entered.
+                if (timeToWaitBetweenLoops > 0 && currentLoop + 1 < numOfLoops && running)
+                {
+                    Thread.Sleep(timeToWaitBetweenLoops);
+                }
+                sw.Reset();
             }
             running = false;
             sw = new EditableStopWatch(0);
+            // at the end we leave all the mouse clicks, because sometimes there are bugs with them.
             MouseClicker.leaveLeftMouse(Cursor.Position.X, Cursor.Position.Y);
             MouseClicker.leaveRighttMouse(Cursor.Position.X, Cursor.Position.Y);
         }
@@ -369,7 +287,7 @@ namespace RecordNplay
         private async void button3_Click(object sender, EventArgs e)
         {
             List<MacroEvent> handledMacro = whoIsHandled();
-            if(handledMacro == null || handledMacro.Count < 1)
+            if (handledMacro == null || handledMacro.Count < 1)
             {
                 MessageBox.Show("There is no macro to repeat");
                 return;
@@ -379,7 +297,7 @@ namespace RecordNplay
                 await countDownOnScreen(2);
                 new Thread(() =>
                 {
-                   runMacro(handledMacro, currentLoop.Text, currentWait.Text);
+                    runMacro(handledMacro, currentLoop.Text, currentWait.Text);
                 }).Start();
             }
         }
@@ -439,12 +357,10 @@ namespace RecordNplay
             });
             currentLoop.Text = savedObject.loop;
             currentWait.Text = savedObject.waitTime;
-            numberOfMarkedLoop = 0;
-            startIndexLoop = savedObject.list.Count;
             return savedObject.list;
         }
 
-        private void saveMacro(List<MacroEvent> listofa, String name, string currentLoop, string currentWait)
+        private void saveMacro(List<MacroEvent> listofa, string name, string currentLoop, string currentWait)
         {
             List<MacroEvent> handledMacro = whoIsHandled();
             JsonSerializer serializer = new JsonSerializer();
@@ -514,16 +430,6 @@ namespace RecordNplay
                 for (int i = 0; i < macroSteps.Count; i++)
                 {
                     listView1.Items.Add(macroSteps[i].ToString());
-                }
-                if (macroSteps == whoIsHandled())//we redraw it
-                {
-                    if (numberOfMarkedLoop > 0)//there are things we need to add backcolor to them
-                    {
-                        for (int i = startIndexLoop; i <= endIndexLoop; i++)
-                        {
-                            listView1.Items[i].BackColor = Color.Lime;
-                        }
-                    }
                 }
             }
         }
@@ -727,20 +633,6 @@ namespace RecordNplay
             listView1.Refresh();
         }
 
-        private void updateIndexesOnDeleteStep(int index)
-        {
-            if (index < startIndexLoop)
-            {
-                startIndexLoop--;
-                endIndexLoop--;
-            }
-            else if (index <= endIndexLoop)
-            {
-                numberOfMarkedLoop--;
-                endIndexLoop--;
-            }
-        }
-
         private void DeleteStep_Click(object sender, EventArgs e)
         {
             List<MacroEvent> handledMacro = whoIsHandled();
@@ -750,7 +642,6 @@ namespace RecordNplay
                 if (handledMacro[currentIndex] is PressedKeyEvent)
                 {
                     handledMacro.RemoveAt(currentIndex);
-                    updateIndexesOnDeleteStep(currentIndex);
                 }
                 else
                 {
@@ -758,18 +649,14 @@ namespace RecordNplay
                     if (coupleIndex > currentIndex)//mouse down
                     {
                         handledMacro.RemoveAt(coupleIndex);
-                        updateIndexesOnDeleteStep(coupleIndex);
 
                         handledMacro.RemoveAt(currentIndex);
-                        updateIndexesOnDeleteStep(currentIndex);
                     }
                     else//mouse up
                     {
                         handledMacro.RemoveAt(currentIndex);
-                        updateIndexesOnDeleteStep(currentIndex);
 
                         handledMacro.RemoveAt(coupleIndex);
-                        updateIndexesOnDeleteStep(coupleIndex);
                     }
 
                 }
@@ -835,7 +722,7 @@ namespace RecordNplay
         {
             List<MacroEvent> handledMacro = whoIsHandled();
             int insertIndex;
-            int startTime,x,y;
+            int startTime, x, y;
             string[] info = TextDialog.ShowAdd();
             if (info == null)
             {
@@ -885,7 +772,7 @@ namespace RecordNplay
                         contrary = true;
                     }
                     insertIndex = findIndexOfInsert(startTime);
-                    handledMacro.Insert(insertIndex, new WaitColorEvent(startTime,red, green, blue, x, y,contrary));
+                    handledMacro.Insert(insertIndex, new WaitColorEvent(startTime, red, green, blue, x, y, contrary));
                     listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
                     break;
                 default: // if exit without choosing anything
@@ -918,7 +805,7 @@ namespace RecordNplay
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if(sw != null)
+            if (sw != null)
             {
                 timeLabel.Text = "Time:" + sw.ElapsedMilliseconds;
             }
@@ -1083,7 +970,7 @@ namespace RecordNplay
         private void makeMacroFast_Click(object sender, EventArgs e)
         {
             List<MacroEvent> handledMacro = whoIsHandled();
-            if(handledMacro == null || handledMacro.Count < 1)
+            if (handledMacro == null || handledMacro.Count < 1)
             {
                 MessageBox.Show("You can't make macro faster if you don't have a macro");
                 return;
@@ -1092,14 +979,14 @@ namespace RecordNplay
             for (int i = 0; i < handledMacro.Count; i++)
             {
                 howManyInclude.Add(0);
-                if(!(handledMacro[i] is PressedKeyEvent))
+                if (!(handledMacro[i] is PressedKeyEvent))
                 {
                     continue;
                 }
                 int whenEnd = (int)(((PressedKeyEvent)handledMacro[i]).startTime + ((PressedKeyEvent)handledMacro[i]).duration);
-                for (int j = i+1; j < handledMacro.Count; j++)
+                for (int j = i + 1; j < handledMacro.Count; j++)
                 {
-                    if(whenEnd >= handledMacro[j].startTime)
+                    if (whenEnd >= handledMacro[j].startTime)
                     {
                         howManyInclude[i]++;
                     }
@@ -1107,8 +994,8 @@ namespace RecordNplay
             }
             for (int i = 0; i < handledMacro.Count; i++)
             {
-                handledMacro[i].startTime = i*5;
-                if(handledMacro[i] is PressedKeyEvent)
+                handledMacro[i].startTime = i * 5;
+                if (handledMacro[i] is PressedKeyEvent)
                 {
                     ((PressedKeyEvent)handledMacro[i]).duration = howManyInclude[i] > 0 ? 5 + (5 * howManyInclude[i] - 2) : 5;
                 }
@@ -1177,110 +1064,6 @@ namespace RecordNplay
             return true;
         }
 
-        private bool checkIfIsNearExistingLoop(ListView list)
-        {
-            if (list.SelectedIndices == null)
-            {
-                return false;
-            }
-            if (numberOfMarkedLoop > 0)
-            {
-                if (!(list.SelectedIndices[0] == endIndexLoop + 1 || list.SelectedIndices[list.SelectedIndices.Count - 1] == startIndexLoop - 1))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private void setLoopButton_Click(object sender, EventArgs e)
-        {
-            if (writingChars == null || writingChars.Count < 1)
-            {
-                MessageBox.Show("In order to add loop you need to select steps");
-                return;
-            }
-            if (!checkIfChooseInRow(listView1))
-            {
-                MessageBox.Show("You need to select steps in a row");
-                return;
-            }
-            if (!checkIfIsNearExistingLoop(listView1))
-            {
-                MessageBox.Show("You can't make 2 seperate loops");
-                return;
-            }
-            if (!checkIfEveryMouseClickSelectedHasItsCouple())
-            {
-                MessageBox.Show("You need to select mouse pressed couple as well(in example you marked only mouse release or pressed without the other one)");
-                return;
-            }
-            List<MacroEvent> handledMacro = whoIsHandled();
-            foreach (int index in listView1.SelectedIndices)
-            {
-                if (!listView1.Items[index].BackColor.Equals(Color.Lime))
-                {
-                    if (index <= startIndexLoop)
-                    {
-                        startIndexLoop = index;
-                    }
-                    if (index >= endIndexLoop)
-                    {
-                        endIndexLoop = index;
-                    }
-                    numberOfMarkedLoop++;
-                    listView1.Items[index].BackColor = Color.Lime;
-                }
-            }
-        }
-
-        private void removeLoopButton_Click(object sender, EventArgs e)
-        {
-            if (writingChars == null || writingChars.Count < 1)
-            {
-                MessageBox.Show("in order to remove loop you need to choose steps");
-                return;
-            }
-            if (!checkIfChooseInRow(listView1))
-            {
-                MessageBox.Show("You need to select steps in a row");
-                return;
-            }
-            if (!checkIfEveryMouseClickSelectedHasItsCouple())
-            {
-                MessageBox.Show("You need to select mouse pressed couple as well(in example you marked only mouse release or pressed without the other one)");
-                return;
-            }
-            List<MacroEvent> handledMacro = whoIsHandled();
-            foreach (int index in listView1.SelectedIndices)
-            {
-                if (!listView1.Items[index].BackColor.ToKnownColor().Equals(Color.White.ToKnownColor()))
-                {
-                    numberOfMarkedLoop--;
-                    listView1.Items[index].BackColor = Color.White;
-                }
-            }
-            if (listView1.SelectedIndices != null && listView1.SelectedIndices.Count > 0)
-            {
-                if (listView1.SelectedIndices[0] <= endIndexLoop && listView1.SelectedIndices[listView1.SelectedIndices.Count - 1] >= endIndexLoop)
-                {
-                    endIndexLoop = listView1.SelectedIndices[0] - 1;
-                    if (numberOfMarkedLoop == 0)//there's no loop
-                    {
-                        endIndexLoop = 0;
-                    }
-                }
-                if (listView1.SelectedIndices[listView1.SelectedIndices.Count - 1] >= startIndexLoop && listView1.SelectedIndices[0] <= startIndexLoop)
-                {
-                    startIndexLoop = listView1.SelectedIndices[listView1.SelectedIndices.Count - 1] + 1;
-                    if (numberOfMarkedLoop == 0)//there's no loop
-                    {
-                        startIndexLoop = handledMacro.Count;
-                    }
-                }
-            }
-        }
-
         private bool checkIfEveryMouseClickSelectedHasItsCouple()
         {
             if (listView1.SelectedIndices == null)
@@ -1290,7 +1073,7 @@ namespace RecordNplay
             List<MacroEvent> handledMacro = whoIsHandled();
             foreach (int index in listView1.SelectedIndices)
             {
-                if (handledMacro[index] is PressedMouseEvent asPressedMouse && !listView1.SelectedIndices.Contains(getIndexOfCoupleClick(index,asPressedMouse.clickType)))
+                if (handledMacro[index] is PressedMouseEvent asPressedMouse && !listView1.SelectedIndices.Contains(getIndexOfCoupleClick(index, asPressedMouse.clickType)))
                 {
                     return false;
                 }
@@ -1300,7 +1083,7 @@ namespace RecordNplay
 
         private void copyLinesButton_Click(object sender, EventArgs e)
         {
-            if(writingChars == null || writingChars.Count < 1)
+            if (writingChars == null || writingChars.Count < 1)
             {
                 MessageBox.Show("In order to copy lines you need to choose lines");
                 return;
