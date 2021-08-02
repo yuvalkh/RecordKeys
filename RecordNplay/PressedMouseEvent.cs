@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RecordNplay
 {
@@ -15,10 +11,10 @@ namespace RecordNplay
 
         public PressedMouseEvent()
         {
-            this.clickType = 1;
-            this.x = -1;
-            this.y = -1;
-            this.startTime = -1;
+            clickType = 1;
+            x = -1;
+            y = -1;
+            startTime = -1;
         }
 
         public PressedMouseEvent(byte clickType, int x, int y,long startTime)

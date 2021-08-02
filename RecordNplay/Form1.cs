@@ -46,11 +46,11 @@ namespace RecordNplay
             InitializeComponent();
             comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             gkh = new globalKeyboardHook(this);
-            this.BackColor = Color.LightBlue;
-            this.listView1.View = View.Details;
-            this.listView1.HeaderStyle = ColumnHeaderStyle.None;
-            this.listView1.FullRowSelect = true;
-            this.listView1.Columns.Add("", -2);
+            BackColor = Color.LightBlue;
+            listView1.View = View.Details;
+            listView1.HeaderStyle = ColumnHeaderStyle.None;
+            listView1.FullRowSelect = true;
+            listView1.Columns.Add("", -2);
             DirectoryInfo d = new DirectoryInfo(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             foreach (var file in d.GetFiles("*.json"))
             {
@@ -87,6 +87,14 @@ namespace RecordNplay
             for (int i = 1; i <= 12; i++)
             {
                 comboBox.Items.Add("F" + i);
+            }
+            for (int i = 0; i <= 9; i++)
+            {
+                comboBox.Items.Add("NumPad" + i);
+            }
+            for (int i = 0; i <= 9; i++)
+            {
+                comboBox.Items.Add("D" + i);
             }
         }
 
@@ -211,6 +219,7 @@ namespace RecordNplay
                     return;
                 }
             }
+            KeysClicker.clickEscape = 0;
             running = true;
             sw.Reset();
             for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)

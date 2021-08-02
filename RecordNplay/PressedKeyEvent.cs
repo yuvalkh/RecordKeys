@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -36,6 +32,10 @@ namespace RecordNplay
 
         public override void activate()
         {
+            if (keyCode == 27) // bytecode of Esc
+            {
+                KeysClicker.clickEscape++;
+            }
             new Task(() =>
             {
                 KeysClicker.holdKey(keyCode, (int)duration);
@@ -44,7 +44,7 @@ namespace RecordNplay
 
         public override string ToString()
         {
-            return "Pressed " + ((Keys)keyCode).ToString() + " for " + duration + " time at " + startTime;
+            return "Press " + ((Keys)keyCode).ToString() + " for " + duration + " time at " + startTime;
         }
     }
 }

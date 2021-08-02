@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Threading;
 using WindowsInput.Native;
 
@@ -106,8 +104,12 @@ namespace RecordNplay
             {
                 if((byte)e.KeyValue == 27)//it means we need to stop the macro
                 {
-                    releaseAllKeys();
-                    Form1.running = false;
+                    if (KeysClicker.clickEscape <= 0) // checking if the computer is pressing or human
+                    {
+                        releaseAllKeys();
+                        Form1.running = false;
+                    }
+                    KeysClicker.clickEscape--; //true when pc is clicking so we turn it to false right after so we know a human is pressing after
                 }
             }
                 //Console.WriteLine("Up\t" + e.KeyCode.ToString());

@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using WindowsInput.Native;
-using WindowsInput;
 using System.Windows.Forms;
 using System.Threading;
 
@@ -14,27 +8,6 @@ namespace RecordNplay
 {
     class MouseClicker
     {
-        /*public static InputSimulator sim = new InputSimulator();
-        public static void pressLeftMouse(int x, int y)
-        {
-            Cursor.Position = new Point(x,y);
-            sim.Mouse.LeftButtonDown();
-        }
-        public static void leaveLeftMouse(int x, int y)
-        {
-            Cursor.Position = new Point(x, y);
-            sim.Mouse.LeftButtonUp();
-        }
-        public static void pressRightMouse(int x, int y)
-        {
-            sim.Mouse.MoveMouseTo(x, y);
-            sim.Mouse.RightButtonDown();
-        }
-        public static void leaveRighttMouse(int x, int y)
-        {
-            sim.Mouse.MoveMouseTo(x, y);
-            sim.Mouse.RightButtonUp();
-        }*/
 
         [DllImport("user32.dll")]
         static extern bool SetCursorPos(int X, int Y);

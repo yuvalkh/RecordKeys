@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using WindowsInput.Native;
 using WindowsInput;
 
 namespace RecordNplay
@@ -16,6 +9,7 @@ namespace RecordNplay
     {
         public static List<Keys> keysDown = new List<Keys>();
         public static InputSimulator sim = new InputSimulator();
+        public volatile static int clickEscape = 0;
         public static void holdKey(byte keyCode,int duration)
         {
             InputManager.Keyboard.KeyDown((Keys)keyCode);
