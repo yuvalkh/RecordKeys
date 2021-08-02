@@ -252,7 +252,7 @@ namespace RecordNplay
                             isWaitEvent = true;
                             sw.Stop();
                         }
-                        else if(macroSteps[stepNumber] is LoopEvent eventAsLoop)
+                        else if (macroSteps[stepNumber] is LoopEvent eventAsLoop)
                         {
                             loopLists.Add(eventAsLoop);
                         }
@@ -261,14 +261,14 @@ namespace RecordNplay
                         {
                             sw.Start();
                         }
-                        if (loopLists.Count != 0) 
+                        if (loopLists.Count != 0)
                         {
                             LoopEvent loopToJump = null;
                             for (int j = loopLists.Count - 1; j >= 0; j--)// iterate from down to up in loops
                             {
                                 if (stepNumber - loopLists[j].startEventIndex >= loopLists[j].numberOfEvents - 1) // we need to check if we need to go back (loop)
                                 {
-                                    
+
                                     if (loopLists[loopLists.Count - 1].currentLoop < loopLists[loopLists.Count - 1].numberOfLoops)
                                     {
                                         loopToJump = loopLists[j];
@@ -535,6 +535,8 @@ namespace RecordNplay
                 long newStartTime;
                 long initialStartTime;
                 string[] newValueInString;
+                try
+                {
                 switch (handledMacro[currentIndex])
                 {
                     case PressedKeyEvent currentAsPKI:
@@ -734,11 +736,11 @@ namespace RecordNplay
                         if (newValuesArray != null && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)) && newValuesArray[3].All(x => char.IsDigit(x)))
                         {
                             bool changed = false;
+                            initialStartTime = infoAsLoopEvent.startTime;
                             if (long.Parse(newValuesArray[1]) != infoAsLoopEvent.startTime)
                             {
                                 changed = true;
                                 newStartTime = long.Parse(newValuesArray[1]);
-                                initialStartTime = infoAsLoopEvent.startTime;
                                 infoAsLoopEvent.startTime = newStartTime;
                                 int newIndexToInsert = findIndexOfInsert(newStartTime);
                                 if (newStartTime > initialStartTime)
@@ -752,15 +754,27 @@ namespace RecordNplay
                                     handledMacro.Insert(newIndexToInsert, infoAsLoopEvent);
                                 }
                             }
+                            long initialLoops = infoAsLoopEvent.numberOfLoops;
                             if (long.Parse(newValuesArray[2]) != infoAsLoopEvent.numberOfLoops)
                             {
                                 changed = true;
                                 infoAsLoopEvent.numberOfLoops = int.Parse(newValuesArray[2]);
                             }
+                            int initialEvents = infoAsLoopEvent.numberOfEvents;
                             if (long.Parse(newValuesArray[3]) != infoAsLoopEvent.numberOfEvents)
                             {
                                 changed = true;
                                 infoAsLoopEvent.numberOfEvents = int.Parse(newValuesArray[3]);
+                            }
+                            if (!checkIfLoopsNestedCorrectly()) // there are loops who doesn't follow the rules of loops
+                            {
+                                // restore all the former data
+                                infoAsLoopEvent.startTime = initialStartTime;
+                                infoAsLoopEvent.numberOfLoops = initialLoops;
+                                infoAsLoopEvent.numberOfEvents = initialEvents;
+                                MessageBox.Show("The loop is partially nested. \n" +
+                                                "It needs to be fully nested or not nested at all.");
+                                break;
                             }
                             if (changed) // only if we changed something we update the macro steps
                             {
@@ -778,6 +792,11 @@ namespace RecordNplay
                     default:
                         MessageBox.Show("I don't know how to update this event");
                         break;
+                }
+
+                } catch(Exception)
+                {
+                    MessageBox.Show("There's a problem with the data entered.");
                 }
             }
             listView1.Refresh();
@@ -878,64 +897,81 @@ namespace RecordNplay
             {
                 return;
             }
-            switch (info[0]) // the first cell in info is the name of the event
+
+            try
             {
-                case "Key": //Keyboard Press Event
-                    TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
-                    Keys key = (Keys)converter.ConvertFromString(info[1]);
-                    byte newKeycode = (byte)key;
-                    insertIndex = findIndexOfInsert(int.Parse(info[3]));
-                    handledMacro.Insert(insertIndex, new PressedKeyEvent(newKeycode, long.Parse(info[2]), long.Parse(info[3])));
-                    listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
-                    break;
-                case "Mouse": // Mouse Press Event
-                    byte clickType;
-                    if (info[1].Equals("Left Click"))
-                    {
-                        clickType = 0;
-                    }
-                    else//right click
-                    {
-                        clickType = 2;
-                    }
-                    startTime = int.Parse(info[2]);
-                    x = int.Parse(info[3]);
-                    y = int.Parse(info[4]);
-                    insertIndex = findIndexOfInsert(startTime);
-                    handledMacro.Insert(insertIndex, new PressedMouseEvent(clickType, x, y, startTime));
-                    listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
-                    insertIndex = findIndexOfInsert(startTime + 1);
-                    handledMacro.Insert(insertIndex, new PressedMouseEvent(++clickType, x, y, startTime + 100));
-                    listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
-                    break;
-                case "WaitColor": //Wait Color Event
-                    startTime = int.Parse(info[1]);
-                    x = int.Parse(info[2]);
-                    y = int.Parse(info[3]);
-                    int red = int.Parse(info[4]);
-                    int green = int.Parse(info[5]);
-                    int blue = int.Parse(info[6]);
-                    bool contrary = false;
-                    if (info[7] == "True")
-                    {
-                        contrary = true;
-                    }
-                    insertIndex = findIndexOfInsert(startTime);
-                    handledMacro.Insert(insertIndex, new WaitColorEvent(startTime, red, green, blue, x, y, contrary));
-                    listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
-                    break;
-                case "Loop":
-                    //timeTextbox loopTextbox.Text eventsTextbox
-                    startTime = int.Parse(info[1]);
-                    int loops = int.Parse(info[2]);
-                    int events = int.Parse(info[3]);
-                    insertIndex = findIndexOfInsert(startTime);
-                    handledMacro.Insert(insertIndex, new LoopEvent(startTime,loops,events));
-                    listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
-                    showMacroSteps(handledMacro);
-                    break;
-                default: // if exit without choosing anything
-                    break;
+
+                switch (info[0]) // the first cell in info is the name of the event
+                {
+                    case "Key": //Keyboard Press Event
+                        TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
+                        Keys key = (Keys)converter.ConvertFromString(info[1]);
+                        byte newKeycode = (byte)key;
+                        insertIndex = findIndexOfInsert(int.Parse(info[3]));
+                        handledMacro.Insert(insertIndex, new PressedKeyEvent(newKeycode, long.Parse(info[2]), long.Parse(info[3])));
+                        listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
+                        break;
+                    case "Mouse": // Mouse Press Event
+                        byte clickType;
+                        if (info[1].Equals("Left Click"))
+                        {
+                            clickType = 0;
+                        }
+                        else//right click
+                        {
+                            clickType = 2;
+                        }
+                        startTime = int.Parse(info[2]);
+                        x = int.Parse(info[3]);
+                        y = int.Parse(info[4]);
+                        insertIndex = findIndexOfInsert(startTime);
+                        handledMacro.Insert(insertIndex, new PressedMouseEvent(clickType, x, y, startTime));
+                        listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
+                        insertIndex = findIndexOfInsert(startTime + 1);
+                        handledMacro.Insert(insertIndex, new PressedMouseEvent(++clickType, x, y, startTime + 100));
+                        listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
+                        break;
+                    case "WaitColor": //Wait Color Event
+                        startTime = int.Parse(info[1]);
+                        x = int.Parse(info[2]);
+                        y = int.Parse(info[3]);
+                        int red = int.Parse(info[4]);
+                        int green = int.Parse(info[5]);
+                        int blue = int.Parse(info[6]);
+                        bool contrary = false;
+                        if (info[7] == "True")
+                        {
+                            contrary = true;
+                        }
+                        insertIndex = findIndexOfInsert(startTime);
+                        handledMacro.Insert(insertIndex, new WaitColorEvent(startTime, red, green, blue, x, y, contrary));
+                        listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
+                        break;
+                    case "Loop":
+                        //timeTextbox loopTextbox eventsTextbox
+                        startTime = int.Parse(info[1]);
+                        int loops = int.Parse(info[2]);
+                        int events = int.Parse(info[3]);
+                        insertIndex = findIndexOfInsert(startTime);
+                        handledMacro.Insert(insertIndex, new LoopEvent(startTime, loops, events));
+                        if (!checkIfLoopsNestedCorrectly()) // there are loops who doesn't follow the rules of loops
+                        {
+                            // restore all the former data
+                            handledMacro.RemoveAt(insertIndex); // we remove the loop added because it violates the nested loop rules
+                            MessageBox.Show("The loop is partially nested. \n" +
+                                            "It needs to be fully nested or not nested at all.");
+                            break;
+                        }
+                        listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
+                        showMacroSteps(handledMacro);
+                        break;
+                    default: // if exit without choosing anything
+                        break;
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("There's a problem with the data entered.");
             }
         }
 
@@ -1218,6 +1254,36 @@ namespace RecordNplay
                 if (list.SelectedIndices[i] + 1 != list.SelectedIndices[i + 1])
                 {
                     return false;
+                }
+            }
+            return true;
+        }
+
+        private bool checkIfLoopsNestedCorrectly()
+        {
+            List<MacroEvent> handledMacro = whoIsHandled();
+            if (handledMacro == null)
+            {
+                return true;
+            }
+            List<Tuple<LoopEvent, int>> allLoopsList = new List<Tuple<LoopEvent, int>>();
+            for (int i = 0; i < handledMacro.Count; i++)
+            {
+                if (handledMacro[i] is LoopEvent eventAsLoop)
+                {
+                    allLoopsList.Add(new Tuple<LoopEvent, int>(eventAsLoop, i));
+                }
+            }
+            // Need to check that all the loops are nested inside and not overflowing inside or outside of other loops
+            for (int i = 0; i < allLoopsList.Count; i++)
+            {
+                for (int j = i + 1; j < allLoopsList.Count; j++)
+                {
+                    if (allLoopsList[i].Item1.numberOfEvents + allLoopsList[i].Item2 >= allLoopsList[j].Item2 &&
+                       allLoopsList[i].Item1.numberOfEvents + allLoopsList[i].Item2 < allLoopsList[j].Item1.numberOfEvents + allLoopsList[j].Item2)
+                    {
+                        return false;
+                    }
                 }
             }
             return true;

@@ -2,15 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Management;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Dynamic;
 using System.Drawing;
-using InputManager;
-using static InputManager.MouseHook;
-using System.Runtime.InteropServices;
 
 namespace RecordNplay
 {
