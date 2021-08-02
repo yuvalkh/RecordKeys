@@ -70,6 +70,7 @@
     <Compile Include="JsonSavedObject.cs" />
     <Compile Include="KeyboardHook.cs" />
     <Compile Include="KeysClicker.cs" />
+    <Compile Include="LoopEvent.cs" />
     <Compile Include="MouseClicker.cs" />
     <Compile Include="MouseHook.cs" />
     <Compile Include="MacroEvent.cs" />

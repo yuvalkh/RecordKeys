@@ -68,11 +68,11 @@ namespace RecordNplay
         {
             if (contrary)
             {
-                return "    Wait pixel " + x + "," + y + " NOT to be " + color.R + "," + color.G + "," + color.B + " at " + startTime;
+                return "Wait pixel " + x + "," + y + " NOT to be " + color.R + "," + color.G + "," + color.B + " at " + startTime;
             }
             else
             {
-                return "    Wait pixel " + x + "," + y + " to be " + color.R + "," + color.G + "," + color.B + " at " + startTime;
+                return "Wait pixel " + x + "," + y + " to be " + color.R + "," + color.G + "," + color.B + " at " + startTime;
             }
         }
     }

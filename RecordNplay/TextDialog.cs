@@ -90,7 +90,7 @@ namespace RecordNplay
             prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
 
-            return prompt.ShowDialog() == DialogResult.OK ? new string[] { comboBox1.Text, textBox2.Text,textBox3.Text,textBox4.Text} : null;
+            return prompt.ShowDialog() == DialogResult.OK ? new string[] { prompt.Text, comboBox1.Text, textBox2.Text,textBox3.Text,textBox4.Text} : null;
         }
         public static string[] ShowKeyEdit(string initialDuration, string initialKeyCode,string initialTime)
         {
@@ -99,7 +99,7 @@ namespace RecordNplay
                 Width = 350,
                 Height = 180,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Edit Key",
+                Text = "Key",
                 MaximizeBox = false,
                 StartPosition = FormStartPosition.CenterScreen
             };
@@ -126,7 +126,7 @@ namespace RecordNplay
             prompt.Controls.Add(changeKey);
             prompt.AcceptButton = confirmation;
 
-            return prompt.ShowDialog() == DialogResult.OK ? new string[] { textBox1.Text, textBox2.Text, textBox3.Text } : null;
+            return prompt.ShowDialog() == DialogResult.OK ? new string[] { prompt.Text, textBox1.Text, textBox2.Text, textBox3.Text } : null;
         }
         private static string readKey()
         {
@@ -159,13 +159,6 @@ namespace RecordNplay
                 g.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
             return bmp.GetPixel(0, 0);
         }
-
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool GetCursorPos(out POINT pPoint);
-
-
         public static string[] ShowWaitColorEdit(int red, int green, int blue, string startTime, string x, string y,string contrary)
         {
             Form prompt = new Form()
@@ -255,7 +248,40 @@ namespace RecordNplay
             prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
 
-            return prompt.ShowDialog() == DialogResult.OK ? new string[] { textBox2.Text, textBox3.Text, textBox4.Text, redUpDown.Text, greenUpDown.Text, blueUpDown.Text, contraryCheckbox.Checked.ToString() } : null;
+            return prompt.ShowDialog() == DialogResult.OK ? new string[] { prompt.Text, textBox2.Text, textBox3.Text, textBox4.Text, redUpDown.Text, greenUpDown.Text, blueUpDown.Text, contraryCheckbox.Checked.ToString() } : null;
+        }
+        public static string[] ShowLoopEdit(string startTime, string loops, string events)
+        {
+            Form prompt = new Form()
+            {
+                Width = 400,
+                Height = 200,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                Text = "Loop",
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            Label timeLabel = new Label() { Left = 20, Top = 10, Text = "Time:", Width = 60 };
+            TextBox timeTextbox = new TextBox() { Left = 100, Top = 10, Width = 150 };
+            Label loopLabel = new Label() { Left = 20, Top = 40, Text = "Loops:", Width = 60 };
+            TextBox loopTextbox = new TextBox() { Left = 100, Top = 40, Width = 150 };
+            Label eventsLabel = new Label() { Left = 20, Top = 70, Text = "Lines:", Width = 60 };
+            TextBox eventsTextbox = new TextBox() { Left = 100, Top = 70, Width = 150 };
+            Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 150, Top = 100, DialogResult = DialogResult.OK };
+            timeTextbox.Text = startTime;
+            loopTextbox.Text = loops;
+            eventsTextbox.Text = events;
+            confirmation.Click += (sender, e) => { prompt.Close(); };
+            prompt.Controls.Add(timeLabel);
+            prompt.Controls.Add(timeTextbox);
+            prompt.Controls.Add(loopLabel);
+            prompt.Controls.Add(loopTextbox);
+            prompt.Controls.Add(eventsLabel);
+            prompt.Controls.Add(eventsTextbox);
+            prompt.Controls.Add(confirmation);
+            prompt.AcceptButton = confirmation;
+
+            return prompt.ShowDialog() == DialogResult.OK ? new string[] { prompt.Text,timeTextbox.Text, loopTextbox.Text, eventsTextbox.Text} : null;
         }
         private static string showChooseEvent()
         {
@@ -265,13 +291,14 @@ namespace RecordNplay
                 Width = 280,
                 Height = 100,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Edit Key",
+                Text = "Choose Event",
                 MaximizeBox = false,
                 StartPosition = FormStartPosition.CenterScreen
             };
             Button MouseButton = new Button() { Left = 20, Top = 10, Text = "Mouse Event",Width = 100};
             Button KeyButton = new Button() { Left = 140, Top = 10, Text = "Key Event", Width = 100};
-            Button WaitColorButton = new Button() { Left = 20, Top = 40, Text = "Wait Color Event", Width = 100 };
+            Button WaitColorButton = new Button() { Left = 20, Top = 35, Text = "Wait Color Event", Width = 100 };
+            Button LoopButton = new Button() { Left = 140, Top = 35, Text = "Loop Event", Width = 100 };
             MouseButton.Click += (sender, args) =>
             {
                 returnedString = "Mouse";
@@ -287,9 +314,15 @@ namespace RecordNplay
                 returnedString = "WaitColor";
                 prompt.Close();
             };
+            LoopButton.Click += (sender, args) =>
+            {
+                returnedString = "Loop";
+                prompt.Close();
+            };
             prompt.Controls.Add(MouseButton);
             prompt.Controls.Add(KeyButton);
             prompt.Controls.Add(WaitColorButton);
+            prompt.Controls.Add(LoopButton);
             prompt.ShowDialog();
             return returnedString;
         }
@@ -304,6 +337,8 @@ namespace RecordNplay
                     return ShowKeyEdit("", "", "");
                 case "WaitColor":
                     return ShowWaitColorEdit(0, 0, 0, "", "", "", "false");
+                case "Loop":
+                    return ShowLoopEdit("0", "1", "1");
                 default: // if exit without choosing anything
                     return null;
             }

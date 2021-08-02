@@ -217,6 +217,7 @@ namespace RecordNplay
             {
                 sw.Start();
                 stepNumber = 0;
+                List<LoopEvent> loopLists = new List<LoopEvent>();
                 while (stepNumber < macroSteps.Count)
                 {
                     if (!running) // we always check if we still need to run (maybe the user pressed esc)
@@ -234,6 +235,10 @@ namespace RecordNplay
                                 {
                                     listView1.TopItem = listView1.Items[stepNumber - 8];
                                 }
+                                else
+                                {
+                                    listView1.TopItem = listView1.Items[0];
+                                }
                                 listView1.Items[stepNumber].BackColor = Color.LightSteelBlue;
                                 if (stepNumber > 0)
                                 {
@@ -247,10 +252,77 @@ namespace RecordNplay
                             isWaitEvent = true;
                             sw.Stop();
                         }
+                        else if(macroSteps[stepNumber] is LoopEvent eventAsLoop)
+                        {
+                            loopLists.Add(eventAsLoop);
+                        }
                         macroSteps[stepNumber].activate();
                         if (isWaitEvent) // we continue our stopwatch when we done waiting
                         {
                             sw.Start();
+                        }
+                        if (loopLists.Count != 0) 
+                        {
+                            LoopEvent loopToJump = null;
+                            for (int j = loopLists.Count - 1; j >= 0; j--)// iterate from down to up in loops
+                            {
+                                if (stepNumber - loopLists[j].startEventIndex >= loopLists[j].numberOfEvents - 1) // we need to check if we need to go back (loop)
+                                {
+                                    
+                                    if (loopLists[loopLists.Count - 1].currentLoop < loopLists[loopLists.Count - 1].numberOfLoops)
+                                    {
+                                        loopToJump = loopLists[j];
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        loopLists.RemoveAt(j);
+                                    }
+                                }
+                            }
+                            if (loopToJump != null)
+                            {
+                                sw.Stop();
+                                loopToJump.currentLoop++;
+                                if (listView1.InvokeRequired)
+                                {
+                                    listView1.Invoke((MethodInvoker)delegate ()
+                                    {
+                                        listView1.Items[stepNumber].BackColor = Color.White;
+                                    });
+                                }
+                                stepNumber = loopToJump.startEventIndex - 1; // We do minus 1 because we do stepNumber++ in the end
+                                sw = new EditableStopWatch(loopToJump.startEventTime);
+                                sw.Start();
+                            }
+                            /*
+                            if (stepNumber - loopLists[loopLists.Count - 1].startEventIndex >= loopLists[loopLists.Count - 1].numberOfEvents - 1) // we need to check if we need to go back (loop)
+                            {
+                                if (loopLists[loopLists.Count - 1].currentLoop >= loopLists[loopLists.Count - 1].numberOfLoops)
+                                {
+                                    loopLists.RemoveAt(loopLists.Count - 1); // we remove that loop because we done with it
+                                }
+                                else
+                                {
+                                    sw.Stop();
+                                    loopLists[loopLists.Count - 1].currentLoop++;
+                                    if (listView1.InvokeRequired)
+                                    {
+                                        listView1.Invoke((MethodInvoker)delegate ()
+                                        {
+                                            listView1.Items[stepNumber].BackColor = Color.White;
+                                        });
+                                    }
+                                    stepNumber = loopLists[loopLists.Count - 1].startEventIndex - 1; // We do minus 1 because we do stepNumber++ in the end
+                                    sw = new EditableStopWatch(loopLists[loopLists.Count - 1].startEventTime);
+                                    sw.Start();
+                                }
+                            }    
+                            */
+
+
+
+
                         }
                         stepNumber++;
                     }
@@ -424,12 +496,32 @@ namespace RecordNplay
 
         public void showMacroSteps(List<MacroEvent> macroSteps)
         {
+            List<int> forIndentation = new List<int>();
+
             if (macroSteps != null)
             {
                 listView1.Items.Clear();
                 for (int i = 0; i < macroSteps.Count; i++)
                 {
-                    listView1.Items.Add(macroSteps[i].ToString());
+                    if (forIndentation.Count > 0)
+                    {
+                        for (int j = forIndentation.Count - 1; j >= 0; j--)
+                        {
+                            if (forIndentation[j] <= 0)
+                            {
+                                forIndentation.RemoveAt(j);
+                            }
+                            else
+                            {
+                                forIndentation[j]--;
+                            }
+                        }
+                    }
+                    listView1.Items.Add(string.Concat(Enumerable.Repeat("  ", forIndentation.Count)) + macroSteps[i].ToString());
+                    if (macroSteps[i] is LoopEvent loopEvent) // we saw a loop so we need to add indentation
+                    {
+                        forIndentation.Add(loopEvent.numberOfEvents);
+                    }
                 }
             }
         }
@@ -450,15 +542,15 @@ namespace RecordNplay
                         byte initialKeycode = currentAsPKI.keyCode;
                         initialStartTime = currentAsPKI.startTime;
                         string[] newValuesArray = TextDialog.ShowKeyEdit(initialDuration.ToString(), ((Keys)initialKeycode).ToString(), initialStartTime.ToString());
-                        if (newValuesArray != null && long.Parse(newValuesArray[1]) > 0 && newValuesArray[1].All(x => char.IsDigit(x)))
+                        if (newValuesArray != null && long.Parse(newValuesArray[2]) > 0 && newValuesArray[2].All(x => char.IsDigit(x)))
                         {
                             int newIndexToInsert = -1;
                             bool changed = false;
                             TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
-                            Keys key = (Keys)converter.ConvertFromString(newValuesArray[0]);
+                            Keys key = (Keys)converter.ConvertFromString(newValuesArray[1]);
                             byte newKeycode = (byte)key;
-                            long newDuration = long.Parse(newValuesArray[1]);
-                            newStartTime = long.Parse(newValuesArray[2]);
+                            long newDuration = long.Parse(newValuesArray[2]);
+                            newStartTime = long.Parse(newValuesArray[3]);
                             if (newKeycode != initialKeycode)
                             {
                                 changed = true;
@@ -486,7 +578,6 @@ namespace RecordNplay
                                         handledMacro.RemoveAt(currentIndex);
                                         handledMacro.Insert(newIndexToInsert, currentAsPKI);
                                     }
-
                                 }
                                 else
                                 {
@@ -523,13 +614,13 @@ namespace RecordNplay
                             initialClickType = "Left Click";
                         }
                         newValueInString = TextDialog.ShowMouseEdit(infoAsMouse.clickType, infoAsMouse.startTime.ToString(), initialX.ToString(), initialY.ToString());
-                        if (newValueInString != null && !newValueInString[0].Equals("") && newValueInString[1].All(x => char.IsDigit(x)) && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)))
+                        if (newValueInString != null && !newValueInString[1].Equals("") && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)) && newValueInString[4].All(x => char.IsDigit(x)))
                         {
                             bool changed = false;
-                            newClickType = newValueInString[0];
-                            newStartTime = int.Parse(newValueInString[1]);
-                            newX = int.Parse(newValueInString[2]);
-                            newY = int.Parse(newValueInString[3]);
+                            newClickType = newValueInString[1];
+                            newStartTime = int.Parse(newValueInString[2]);
+                            newX = int.Parse(newValueInString[3]);
+                            newY = int.Parse(newValueInString[4]);
                             if (newStartTime != initialStartTime && checkIfTimeIsValid(newStartTime, currentIndex))
                             {
                                 handledMacro[currentIndex].startTime = newStartTime;
@@ -576,34 +667,47 @@ namespace RecordNplay
                     case WaitColorEvent infoAsWaitColor:
                         //Time,x,y,red,green,blue,contrary
                         newValuesArray = TextDialog.ShowWaitColorEdit(infoAsWaitColor.color.R, infoAsWaitColor.color.G, infoAsWaitColor.color.B, infoAsWaitColor.startTime.ToString(), infoAsWaitColor.x.ToString(), infoAsWaitColor.y.ToString(), infoAsWaitColor.contrary.ToString());
-                        if (newValuesArray != null && newValuesArray[0].All(x => char.IsDigit(x)) && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)))
+                        if (newValuesArray != null && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)) && newValuesArray[3].All(x => char.IsDigit(x)))
                         {
                             bool changed = false;
-                            if (long.Parse(newValuesArray[0]) != infoAsWaitColor.startTime)
+                            if (long.Parse(newValuesArray[1]) != infoAsWaitColor.startTime)
                             {
                                 changed = true;
-                                infoAsWaitColor.startTime = long.Parse(newValuesArray[0]);
+                                newStartTime = long.Parse(newValuesArray[1]);
+                                initialStartTime = infoAsWaitColor.startTime;
+                                infoAsWaitColor.startTime = newStartTime;
+                                int newIndexToInsert = findIndexOfInsert(newStartTime);
+                                if (newStartTime > initialStartTime)
+                                {
+                                    handledMacro.Insert(newIndexToInsert, infoAsWaitColor);
+                                    handledMacro.RemoveAt(currentIndex);
+                                }
+                                else
+                                {
+                                    handledMacro.RemoveAt(currentIndex);
+                                    handledMacro.Insert(newIndexToInsert, infoAsWaitColor);
+                                }
                             }
-                            if (long.Parse(newValuesArray[1]) != infoAsWaitColor.x)
+                            if (long.Parse(newValuesArray[2]) != infoAsWaitColor.x)
                             {
                                 changed = true;
-                                infoAsWaitColor.x = int.Parse(newValuesArray[1]);
+                                infoAsWaitColor.x = int.Parse(newValuesArray[2]);
                             }
-                            if (long.Parse(newValuesArray[2]) != infoAsWaitColor.y)
+                            if (long.Parse(newValuesArray[3]) != infoAsWaitColor.y)
                             {
                                 changed = true;
-                                infoAsWaitColor.y = int.Parse(newValuesArray[2]);
+                                infoAsWaitColor.y = int.Parse(newValuesArray[3]);
                             }
-                            Color newColor = Color.FromArgb(int.Parse(newValuesArray[3]), int.Parse(newValuesArray[4]), int.Parse(newValuesArray[5]));
+                            Color newColor = Color.FromArgb(int.Parse(newValuesArray[4]), int.Parse(newValuesArray[5]), int.Parse(newValuesArray[6]));
                             if (!newColor.Equals(infoAsWaitColor.color))
                             {
                                 changed = true;
                                 infoAsWaitColor.color = newColor;
                             }
-                            if (!infoAsWaitColor.contrary.ToString().Equals(newValuesArray[6]))
+                            if (!infoAsWaitColor.contrary.ToString().Equals(newValuesArray[7]))
                             {
                                 changed = true;
-                                if (newValuesArray[6] == "True")
+                                if (newValuesArray[7] == "True")
                                 {
                                     infoAsWaitColor.contrary = true;
                                 }
@@ -611,6 +715,52 @@ namespace RecordNplay
                                 {
                                     infoAsWaitColor.contrary = false;
                                 }
+                            }
+                            if (changed) // only if we changed something we update the macro steps
+                            {
+                                showMacroSteps(handledMacro);
+                            }
+                        }
+                        else
+                        {
+                            if (newValuesArray != null)
+                            {
+                                MessageBox.Show("Problem with the data entered");
+                            }
+                        }
+                        break;
+                    case LoopEvent infoAsLoopEvent:
+                        newValuesArray = TextDialog.ShowLoopEdit(infoAsLoopEvent.startTime.ToString(), infoAsLoopEvent.numberOfLoops.ToString(), infoAsLoopEvent.numberOfEvents.ToString());
+                        if (newValuesArray != null && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)) && newValuesArray[3].All(x => char.IsDigit(x)))
+                        {
+                            bool changed = false;
+                            if (long.Parse(newValuesArray[1]) != infoAsLoopEvent.startTime)
+                            {
+                                changed = true;
+                                newStartTime = long.Parse(newValuesArray[1]);
+                                initialStartTime = infoAsLoopEvent.startTime;
+                                infoAsLoopEvent.startTime = newStartTime;
+                                int newIndexToInsert = findIndexOfInsert(newStartTime);
+                                if (newStartTime > initialStartTime)
+                                {
+                                    handledMacro.Insert(newIndexToInsert, infoAsLoopEvent);
+                                    handledMacro.RemoveAt(currentIndex);
+                                }
+                                else
+                                {
+                                    handledMacro.RemoveAt(currentIndex);
+                                    handledMacro.Insert(newIndexToInsert, infoAsLoopEvent);
+                                }
+                            }
+                            if (long.Parse(newValuesArray[2]) != infoAsLoopEvent.numberOfLoops)
+                            {
+                                changed = true;
+                                infoAsLoopEvent.numberOfLoops = int.Parse(newValuesArray[2]);
+                            }
+                            if (long.Parse(newValuesArray[3]) != infoAsLoopEvent.numberOfEvents)
+                            {
+                                changed = true;
+                                infoAsLoopEvent.numberOfEvents = int.Parse(newValuesArray[3]);
                             }
                             if (changed) // only if we changed something we update the macro steps
                             {
@@ -728,19 +878,19 @@ namespace RecordNplay
             {
                 return;
             }
-            switch (info.Count())
+            switch (info[0]) // the first cell in info is the name of the event
             {
-                case 3: //Keyboard Press Event
+                case "Key": //Keyboard Press Event
                     TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
-                    Keys key = (Keys)converter.ConvertFromString(info[0]);
+                    Keys key = (Keys)converter.ConvertFromString(info[1]);
                     byte newKeycode = (byte)key;
-                    insertIndex = findIndexOfInsert(int.Parse(info[2]));
-                    handledMacro.Insert(insertIndex, new PressedKeyEvent(newKeycode, long.Parse(info[1]), long.Parse(info[2])));
+                    insertIndex = findIndexOfInsert(int.Parse(info[3]));
+                    handledMacro.Insert(insertIndex, new PressedKeyEvent(newKeycode, long.Parse(info[2]), long.Parse(info[3])));
                     listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
                     break;
-                case 4: // Mouse Press Event
+                case "Mouse": // Mouse Press Event
                     byte clickType;
-                    if (info[0].Equals("Left Click"))
+                    if (info[1].Equals("Left Click"))
                     {
                         clickType = 0;
                     }
@@ -748,9 +898,9 @@ namespace RecordNplay
                     {
                         clickType = 2;
                     }
-                    startTime = int.Parse(info[1]);
-                    x = int.Parse(info[2]);
-                    y = int.Parse(info[3]);
+                    startTime = int.Parse(info[2]);
+                    x = int.Parse(info[3]);
+                    y = int.Parse(info[4]);
                     insertIndex = findIndexOfInsert(startTime);
                     handledMacro.Insert(insertIndex, new PressedMouseEvent(clickType, x, y, startTime));
                     listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
@@ -758,22 +908,31 @@ namespace RecordNplay
                     handledMacro.Insert(insertIndex, new PressedMouseEvent(++clickType, x, y, startTime + 100));
                     listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
                     break;
-                case 7: //Wait Color Event
-                    //Time,x,y,red,green,blue,contrary
-                    startTime = int.Parse(info[0]);
-                    x = int.Parse(info[1]);
-                    y = int.Parse(info[2]);
-                    int red = int.Parse(info[3]);
-                    int green = int.Parse(info[4]);
-                    int blue = int.Parse(info[5]);
+                case "WaitColor": //Wait Color Event
+                    startTime = int.Parse(info[1]);
+                    x = int.Parse(info[2]);
+                    y = int.Parse(info[3]);
+                    int red = int.Parse(info[4]);
+                    int green = int.Parse(info[5]);
+                    int blue = int.Parse(info[6]);
                     bool contrary = false;
-                    if (info[6] == "True")
+                    if (info[7] == "True")
                     {
                         contrary = true;
                     }
                     insertIndex = findIndexOfInsert(startTime);
                     handledMacro.Insert(insertIndex, new WaitColorEvent(startTime, red, green, blue, x, y, contrary));
                     listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
+                    break;
+                case "Loop":
+                    //timeTextbox loopTextbox.Text eventsTextbox
+                    startTime = int.Parse(info[1]);
+                    int loops = int.Parse(info[2]);
+                    int events = int.Parse(info[3]);
+                    insertIndex = findIndexOfInsert(startTime);
+                    handledMacro.Insert(insertIndex, new LoopEvent(startTime,loops,events));
+                    listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
+                    showMacroSteps(handledMacro);
                     break;
                 default: // if exit without choosing anything
                     break;
