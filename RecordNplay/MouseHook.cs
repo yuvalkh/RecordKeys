@@ -56,6 +56,16 @@ namespace RecordNplay
                 Form1.writingChars.Add(new PressedMouseEvent(3, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
                 //Console.WriteLine("You removed right button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
+            if (nCode >= 0 && MouseMessages.WM_MBUTTONDOWN == (MouseMessages)wParam)
+            {
+                Form1.writingChars.Add(new PressedMouseEvent(4, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
+                Console.WriteLine("You pressed middle button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
+            }
+            if (nCode >= 0 && MouseMessages.WM_MBUTTONUP == (MouseMessages)wParam)
+            {
+                Form1.writingChars.Add(new PressedMouseEvent(5, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
+                Console.WriteLine("You removed middle button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
+            }
             /*if (nCode >= 0 && MouseMessages.WM_MOUSEWHEEL == (MouseMessages)wParam)
             {
                 Console.WriteLine("The delta is: " + ((short)(wParam))); 
@@ -72,7 +82,9 @@ namespace RecordNplay
             WM_MOUSEMOVE = 0x0200,
             WM_MOUSEWHEEL = 0x020A,
             WM_RBUTTONDOWN = 0x0204,
-            WM_RBUTTONUP = 0x0205
+            WM_RBUTTONUP = 0x0205,
+            WM_MBUTTONDOWN = 0x0207,
+            WM_MBUTTONUP = 0x0208
         }
 
         [StructLayout(LayoutKind.Sequential)]

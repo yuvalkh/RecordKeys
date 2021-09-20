@@ -47,11 +47,14 @@ namespace RecordNplay
             Label showX = new Label() { Left = 250, Top = 70 };
             Label showY = new Label() { Left = 250, Top = 100 };
             Timer timerChangingCursorLabel = new Timer() { Enabled = true, Interval = 1 };
-            timerChangingCursorLabel.Tick += (sender, e) => { showX.Text = "currentX:" + (int)(Cursor.Position.X*1.25); showY.Text = "currentY:" + (int)(Cursor.Position.Y*1.25); };
+            // use this when the resolution is set to 125% instead of 100%
+            //timerChangingCursorLabel.Tick += (sender, e) => { showX.Text = "currentX:" + (int)(Cursor.Position.X*1.25); showY.Text = "currentY:" + (int)(Cursor.Position.Y*1.25); };
+            timerChangingCursorLabel.Tick += (sender, e) => { showX.Text = "currentX:" + (int)(Cursor.Position.X); showY.Text = "currentY:" + (int)(Cursor.Position.Y); };
             Label textLabel1 = new Label() { Left = 20, Top = 10, Text = "Click:",Width = 60};
             ComboBox comboBox1 = new ComboBox() { Left = 100, Top = 10, Width = 150,DropDownStyle = ComboBoxStyle.DropDownList };
             comboBox1.Items.Add("Left Click");
             comboBox1.Items.Add("Right Click");
+            comboBox1.Items.Add("Middle Click");
             Label textLabel2 = new Label() { Left = 20, Top = 40, Text = "Time:", Width = 60 };
             TextBox textBox2 = new TextBox() { Left = 100, Top = 40, Width = 150 };
             Label textLabel3 = new Label() { Left = 20, Top = 70, Text = "X:", Width = 60 };
@@ -66,6 +69,10 @@ namespace RecordNplay
             else if(clickKind == 2 || clickKind == 3)
             {
                 comboBox1.Text = "Right Click";
+            }
+            else if (clickKind == 4 || clickKind == 5)
+            {
+                comboBox1.Text = "Middle Click";
             }
             textBox2.Text = startTime;
             textBox3.Text = x;
@@ -363,7 +370,8 @@ namespace RecordNplay
             DialogResult dialogResult = MessageBox.Show(question, title, MessageBoxButtons.YesNo);
             return dialogResult == DialogResult.Yes ? true : false;
         }
-        public static string[] showChooseProcessDialog()
+        
+        public static Process showChooseProcessDialog()
         {
             Form prompt = new Form()
             {
@@ -397,32 +405,33 @@ namespace RecordNplay
             processesView.Columns.Add(column2);
 
             Process[] processList = Process.GetProcesses();
-
-            foreach (Process process in processList)
+            List<Process> applicationList = new List<Process>();
+            foreach (var proc in processList)
             {
-                if(process.ProcessName.Equals("svchost") || process.ProcessName.Equals("taskhostw"))
+                if (!string.IsNullOrEmpty(proc.MainWindowTitle))
                 {
-                    continue;
+                    applicationList.Add(proc);
+                    string[] row = { proc.MainWindowTitle, proc.Id.ToString() };
+                    ListViewItem item = new ListViewItem(row);
+                    processesView.Items.Add(item);
                 }
-                string[] row = { process.ProcessName + ".exe", process.Id.ToString()};
-                ListViewItem item = new ListViewItem(row);
-                processesView.Items.Add(item);
             }
 
             Button refreshProcessesButton= new Button() { Text = "Refresh List", Left = 240, Width = 90, Top = 150 };
             refreshProcessesButton.Click += (sender, args) => {
                 processesView.Items.Clear();
-                processList = Process.GetProcesses();
+                applicationList = new List<Process>();
 
-                foreach (Process process in processList)
+                processList = Process.GetProcesses();
+                foreach (var proc in processList)
                 {
-                    if (process.ProcessName.Equals("svchost") || process.ProcessName.Equals("taskhostw"))
+                    if (!string.IsNullOrEmpty(proc.MainWindowTitle))
                     {
-                        continue;
+                        applicationList.Add(proc);
+                        string[] row = { proc.MainWindowTitle, proc.Id.ToString() };
+                        ListViewItem item = new ListViewItem(row);
+                        processesView.Items.Add(item);
                     }
-                    string[] row = { process.ProcessName + ".exe", process.Id.ToString() };
-                    ListViewItem item = new ListViewItem(row);
-                    processesView.Items.Add(item);
                 }
             };
             Button confirmation = new Button() { Text = "Ok", Left = 20, Width = 70, Top = 400, DialogResult = DialogResult.OK };
@@ -431,7 +440,7 @@ namespace RecordNplay
             prompt.Controls.Add(refreshProcessesButton);
             prompt.Controls.Add(confirmation);
 
-            return prompt.ShowDialog() == DialogResult.OK ? new string[] { processesView.SelectedItems[0].ToString() } : null;
+            return prompt.ShowDialog() == DialogResult.OK ? applicationList[processesView.SelectedItems[0].Index] : null;
         }
 
         private static string BytesToReadableValue(long number)

@@ -51,6 +51,14 @@ namespace RecordNplay
             {
                 MouseClicker.leaveRighttMouse(x, y);
             }
+            else if (clickType == 4)
+            {
+                MouseClicker.pressMiddleMouse(x, y);
+            }
+            else if (clickType == 5)
+            {
+                MouseClicker.leaveMiddletMouse(x, y);
+            }
         }
 
         public override string ToString()
@@ -69,6 +77,14 @@ namespace RecordNplay
             else if(clickType == 3)//rightClickUp
             {
                 return "Right Click Up{" + this.x + "," + this.y + "} at" + startTime;
+            }
+            else if (clickType == 4)//rightClickUp
+            {
+                return "Middle Click Down{" + this.x + "," + this.y + "} at" + startTime;
+            }
+            else if (clickType == 5)//rightClickUp
+            {
+                return "Middle Click Up{" + this.x + "," + this.y + "} at" + startTime;
             }
             return "Error";
         }

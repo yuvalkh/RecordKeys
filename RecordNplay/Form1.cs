@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -219,7 +222,7 @@ namespace RecordNplay
                     return;
                 }
             }
-            KeysClicker.clickEscape = 0;
+            KeysClicker.clickEscape = 0; // so the macro won't stop by itself when it presses Esc key
             running = true;
             sw.Reset();
             for (long currentLoop = 0; currentLoop < numOfLoops && running; currentLoop++)
@@ -546,264 +549,298 @@ namespace RecordNplay
                 string[] newValueInString;
                 try
                 {
-                switch (handledMacro[currentIndex])
-                {
-                    case PressedKeyEvent currentAsPKI:
-                        long initialDuration = currentAsPKI.duration;
-                        byte initialKeycode = currentAsPKI.keyCode;
-                        initialStartTime = currentAsPKI.startTime;
-                        string[] newValuesArray = TextDialog.ShowKeyEdit(initialDuration.ToString(), ((Keys)initialKeycode).ToString(), initialStartTime.ToString());
-                        if (newValuesArray != null && long.Parse(newValuesArray[2]) > 0 && newValuesArray[2].All(x => char.IsDigit(x)))
-                        {
-                            int newIndexToInsert = -1;
-                            bool changed = false;
-                            TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
-                            Keys key = (Keys)converter.ConvertFromString(newValuesArray[1]);
-                            byte newKeycode = (byte)key;
-                            long newDuration = long.Parse(newValuesArray[2]);
-                            newStartTime = long.Parse(newValuesArray[3]);
-                            if (newKeycode != initialKeycode)
+                    switch (handledMacro[currentIndex])
+                    {
+                        case PressedKeyEvent currentAsPKI:
+                            long initialDuration = currentAsPKI.duration;
+                            byte initialKeycode = currentAsPKI.keyCode;
+                            initialStartTime = currentAsPKI.startTime;
+                            string[] newValuesArray = TextDialog.ShowKeyEdit(initialDuration.ToString(), ((Keys)initialKeycode).ToString(), initialStartTime.ToString());
+                            if (newValuesArray != null && long.Parse(newValuesArray[2]) > 0 && newValuesArray[2].All(x => char.IsDigit(x)))
                             {
-                                changed = true;
-                                currentAsPKI.keyCode = newKeycode;
-                            }
-                            if (newDuration != initialDuration)
-                            {
-                                changed = true;
-                                currentAsPKI.duration = newDuration;
-                            }
-                            if (newStartTime != initialStartTime)
-                            {
-                                if (newStartTime >= 0)
+                                int newIndexToInsert = -1;
+                                bool changed = false;
+                                TypeConverter converter = TypeDescriptor.GetConverter(typeof(Keys));
+                                Keys key = (Keys)converter.ConvertFromString(newValuesArray[1]);
+                                byte newKeycode = (byte)key;
+                                long newDuration = long.Parse(newValuesArray[2]);
+                                newStartTime = long.Parse(newValuesArray[3]);
+                                if (newKeycode != initialKeycode)
                                 {
                                     changed = true;
-                                    newIndexToInsert = findIndexOfInsert(newStartTime);
-                                    currentAsPKI.startTime = newStartTime;
+                                    currentAsPKI.keyCode = newKeycode;
+                                }
+                                if (newDuration != initialDuration)
+                                {
+                                    changed = true;
+                                    currentAsPKI.duration = newDuration;
+                                }
+                                if (newStartTime != initialStartTime)
+                                {
+                                    if (newStartTime >= 0)
+                                    {
+                                        changed = true;
+                                        newIndexToInsert = findIndexOfInsert(newStartTime);
+                                        currentAsPKI.startTime = newStartTime;
+                                        if (newStartTime > initialStartTime)
+                                        {
+                                            handledMacro.Insert(newIndexToInsert, currentAsPKI);
+                                            handledMacro.RemoveAt(currentIndex);
+                                        }
+                                        else
+                                        {
+                                            handledMacro.RemoveAt(currentIndex);
+                                            handledMacro.Insert(newIndexToInsert, currentAsPKI);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Time can't be less than 0");
+                                    }
+                                }
+                                if (changed)
+                                {
+                                    showMacroSteps(handledMacro);
+                                }
+                            }
+                            else
+                            {
+                                if (newValuesArray != null)
+                                {
+                                    MessageBox.Show("Duration must be greater than 0 and digits only");
+                                }
+                            }
+                            break;
+                        case PressedMouseEvent infoAsMouse:
+                            initialStartTime = handledMacro[currentIndex].startTime;
+                            string initialClickType = "";
+                            string newClickType;
+                            int initialX = infoAsMouse.x;
+                            int newX;
+                            int initialY = infoAsMouse.y;
+                            int newY;
+                            if (infoAsMouse.clickType == 0 || infoAsMouse.clickType == 1)
+                            {
+                                initialClickType = "Left Click";
+                            }
+                            else if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
+                            {
+                                initialClickType = "Right Click";
+                            }
+                            else if (infoAsMouse.clickType == 4 || infoAsMouse.clickType == 5)
+                            {
+                                initialClickType = "Middle Click";
+                            }
+                            newValueInString = TextDialog.ShowMouseEdit(infoAsMouse.clickType, infoAsMouse.startTime.ToString(), initialX.ToString(), initialY.ToString());
+                            if (newValueInString != null && !newValueInString[1].Equals("") && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)) && newValueInString[4].All(x => char.IsDigit(x)))
+                            {
+                                bool changed = false;
+                                newClickType = newValueInString[1];
+                                newStartTime = int.Parse(newValueInString[2]);
+                                newX = int.Parse(newValueInString[3]);
+                                newY = int.Parse(newValueInString[4]);
+                                if (newStartTime != initialStartTime && checkIfTimeIsValid(newStartTime, currentIndex))
+                                {
+                                    handledMacro[currentIndex].startTime = newStartTime;
+                                    changed = true;
+                                }
+                                if (!initialClickType.Equals(newClickType))
+                                {
+                                    changed = true;
+                                    int coupleIndex = getIndexOfCoupleClick(currentIndex, infoAsMouse.clickType);
+                                    if (newClickType.Equals("Left Click"))
+                                    {
+                                        if (infoAsMouse.clickType % 2 == 0) // press on button
+                                        {
+                                            infoAsMouse.clickType = 0;
+                                            ((PressedMouseEvent)handledMacro[coupleIndex]).clickType = 1;
+                                        }
+                                        else // release button
+                                        {
+                                            infoAsMouse.clickType = 1;
+                                            ((PressedMouseEvent)handledMacro[coupleIndex]).clickType = 0;
+                                        }
+                                    }
+                                    else if (newClickType.Equals("Right Click"))
+                                    {
+                                        if (infoAsMouse.clickType % 2 == 0) // press on button
+                                        {
+                                            infoAsMouse.clickType = 2;
+                                            ((PressedMouseEvent)handledMacro[coupleIndex]).clickType = 3;
+                                        }
+                                        else // release button
+                                        {
+                                            infoAsMouse.clickType = 3;
+                                            ((PressedMouseEvent)handledMacro[coupleIndex]).clickType = 2;
+                                        }
+                                    }
+                                    else if (newClickType.Equals("Middle Click"))
+                                    {
+                                        if (infoAsMouse.clickType % 2 == 0) // press on button
+                                        {
+                                            infoAsMouse.clickType = 4;
+                                            ((PressedMouseEvent)handledMacro[coupleIndex]).clickType = 5;
+                                        }
+                                        else // release button
+                                        {
+                                            infoAsMouse.clickType = 5;
+                                            ((PressedMouseEvent)handledMacro[coupleIndex]).clickType = 4;
+                                        }
+                                    }
+                                }
+                                if (initialX != newX)
+                                {
+                                    infoAsMouse.x = newX;
+                                    changed = true;
+                                }
+                                if (initialY != newY)
+                                {
+                                    infoAsMouse.y = newY;
+                                    changed = true;
+                                }
+                                if (changed)
+                                {
+                                    showMacroSteps(handledMacro);
+                                }
+                            }
+                            else
+                            {
+                                if (newValueInString != null)
+                                {
+                                    MessageBox.Show("Problem with the time entered");
+                                }
+                            }
+                            break;
+                        case WaitColorEvent infoAsWaitColor:
+                            //Time,x,y,red,green,blue,contrary
+                            newValuesArray = TextDialog.ShowWaitColorEdit(infoAsWaitColor.color.R, infoAsWaitColor.color.G, infoAsWaitColor.color.B, infoAsWaitColor.startTime.ToString(), infoAsWaitColor.x.ToString(), infoAsWaitColor.y.ToString(), infoAsWaitColor.contrary.ToString());
+                            if (newValuesArray != null && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)) && newValuesArray[3].All(x => char.IsDigit(x)))
+                            {
+                                bool changed = false;
+                                if (long.Parse(newValuesArray[1]) != infoAsWaitColor.startTime)
+                                {
+                                    changed = true;
+                                    newStartTime = long.Parse(newValuesArray[1]);
+                                    initialStartTime = infoAsWaitColor.startTime;
+                                    infoAsWaitColor.startTime = newStartTime;
+                                    int newIndexToInsert = findIndexOfInsert(newStartTime);
                                     if (newStartTime > initialStartTime)
                                     {
-                                        handledMacro.Insert(newIndexToInsert, currentAsPKI);
+                                        handledMacro.Insert(newIndexToInsert, infoAsWaitColor);
                                         handledMacro.RemoveAt(currentIndex);
                                     }
                                     else
                                     {
                                         handledMacro.RemoveAt(currentIndex);
-                                        handledMacro.Insert(newIndexToInsert, currentAsPKI);
+                                        handledMacro.Insert(newIndexToInsert, infoAsWaitColor);
                                     }
                                 }
-                                else
+                                if (long.Parse(newValuesArray[2]) != infoAsWaitColor.x)
                                 {
-                                    MessageBox.Show("Time can't be less than 0");
+                                    changed = true;
+                                    infoAsWaitColor.x = int.Parse(newValuesArray[2]);
+                                }
+                                if (long.Parse(newValuesArray[3]) != infoAsWaitColor.y)
+                                {
+                                    changed = true;
+                                    infoAsWaitColor.y = int.Parse(newValuesArray[3]);
+                                }
+                                Color newColor = Color.FromArgb(int.Parse(newValuesArray[4]), int.Parse(newValuesArray[5]), int.Parse(newValuesArray[6]));
+                                if (!newColor.Equals(infoAsWaitColor.color))
+                                {
+                                    changed = true;
+                                    infoAsWaitColor.color = newColor;
+                                }
+                                if (!infoAsWaitColor.contrary.ToString().Equals(newValuesArray[7]))
+                                {
+                                    changed = true;
+                                    if (newValuesArray[7] == "True")
+                                    {
+                                        infoAsWaitColor.contrary = true;
+                                    }
+                                    else
+                                    {
+                                        infoAsWaitColor.contrary = false;
+                                    }
+                                }
+                                if (changed) // only if we changed something we update the macro steps
+                                {
+                                    showMacroSteps(handledMacro);
                                 }
                             }
-                            if (changed)
+                            else
                             {
-                                showMacroSteps(handledMacro);
-                            }
-                        }
-                        else
-                        {
-                            if (newValuesArray != null)
-                            {
-                                MessageBox.Show("Duration must be greater than 0 and digits only");
-                            }
-                        }
-                        break;
-                    case PressedMouseEvent infoAsMouse:
-                        initialStartTime = handledMacro[currentIndex].startTime;
-                        string initialClickType;
-                        string newClickType;
-                        int initialX = infoAsMouse.x;
-                        int newX;
-                        int initialY = infoAsMouse.y;
-                        int newY;
-                        if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
-                        {
-                            initialClickType = "Right Click";
-                        }
-                        else
-                        {
-                            initialClickType = "Left Click";
-                        }
-                        newValueInString = TextDialog.ShowMouseEdit(infoAsMouse.clickType, infoAsMouse.startTime.ToString(), initialX.ToString(), initialY.ToString());
-                        if (newValueInString != null && !newValueInString[1].Equals("") && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)) && newValueInString[4].All(x => char.IsDigit(x)))
-                        {
-                            bool changed = false;
-                            newClickType = newValueInString[1];
-                            newStartTime = int.Parse(newValueInString[2]);
-                            newX = int.Parse(newValueInString[3]);
-                            newY = int.Parse(newValueInString[4]);
-                            if (newStartTime != initialStartTime && checkIfTimeIsValid(newStartTime, currentIndex))
-                            {
-                                handledMacro[currentIndex].startTime = newStartTime;
-                                changed = true;
-                            }
-                            if (!initialClickType.Equals(newClickType))
-                            {
-                                changed = true;
-                                int coupleIndex = getIndexOfCoupleClick(currentIndex, infoAsMouse.clickType);
-                                if (infoAsMouse.clickType == 2 || infoAsMouse.clickType == 3)
+                                if (newValuesArray != null)
                                 {
-                                    infoAsMouse.clickType -= 2;
-                                    ((PressedMouseEvent)handledMacro[coupleIndex]).clickType -= 2;
-                                }
-                                else
-                                {
-                                    infoAsMouse.clickType += 2;
-                                    ((PressedMouseEvent)handledMacro[coupleIndex]).clickType += 2;
+                                    MessageBox.Show("Problem with the data entered");
                                 }
                             }
-                            if (initialX != newX)
+                            break;
+                        case LoopEvent infoAsLoopEvent:
+                            newValuesArray = TextDialog.ShowLoopEdit(infoAsLoopEvent.startTime.ToString(), infoAsLoopEvent.numberOfLoops.ToString(), infoAsLoopEvent.numberOfEvents.ToString());
+                            if (newValuesArray != null && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)) && newValuesArray[3].All(x => char.IsDigit(x)))
                             {
-                                infoAsMouse.x = newX;
-                                changed = true;
-                            }
-                            if (initialY != newY)
-                            {
-                                infoAsMouse.y = newY;
-                                changed = true;
-                            }
-                            if (changed)
-                            {
-                                showMacroSteps(handledMacro);
-                            }
-                        }
-                        else
-                        {
-                            if (newValueInString != null)
-                            {
-                                MessageBox.Show("Problem with the time entered");
-                            }
-                        }
-                        break;
-                    case WaitColorEvent infoAsWaitColor:
-                        //Time,x,y,red,green,blue,contrary
-                        newValuesArray = TextDialog.ShowWaitColorEdit(infoAsWaitColor.color.R, infoAsWaitColor.color.G, infoAsWaitColor.color.B, infoAsWaitColor.startTime.ToString(), infoAsWaitColor.x.ToString(), infoAsWaitColor.y.ToString(), infoAsWaitColor.contrary.ToString());
-                        if (newValuesArray != null && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)) && newValuesArray[3].All(x => char.IsDigit(x)))
-                        {
-                            bool changed = false;
-                            if (long.Parse(newValuesArray[1]) != infoAsWaitColor.startTime)
-                            {
-                                changed = true;
-                                newStartTime = long.Parse(newValuesArray[1]);
-                                initialStartTime = infoAsWaitColor.startTime;
-                                infoAsWaitColor.startTime = newStartTime;
-                                int newIndexToInsert = findIndexOfInsert(newStartTime);
-                                if (newStartTime > initialStartTime)
+                                bool changed = false;
+                                initialStartTime = infoAsLoopEvent.startTime;
+                                if (long.Parse(newValuesArray[1]) != infoAsLoopEvent.startTime)
                                 {
-                                    handledMacro.Insert(newIndexToInsert, infoAsWaitColor);
-                                    handledMacro.RemoveAt(currentIndex);
+                                    changed = true;
+                                    newStartTime = long.Parse(newValuesArray[1]);
+                                    infoAsLoopEvent.startTime = newStartTime;
+                                    int newIndexToInsert = findIndexOfInsert(newStartTime);
+                                    if (newStartTime > initialStartTime)
+                                    {
+                                        handledMacro.Insert(newIndexToInsert, infoAsLoopEvent);
+                                        handledMacro.RemoveAt(currentIndex);
+                                    }
+                                    else
+                                    {
+                                        handledMacro.RemoveAt(currentIndex);
+                                        handledMacro.Insert(newIndexToInsert, infoAsLoopEvent);
+                                    }
                                 }
-                                else
+                                long initialLoops = infoAsLoopEvent.numberOfLoops;
+                                if (long.Parse(newValuesArray[2]) != infoAsLoopEvent.numberOfLoops)
                                 {
-                                    handledMacro.RemoveAt(currentIndex);
-                                    handledMacro.Insert(newIndexToInsert, infoAsWaitColor);
+                                    changed = true;
+                                    infoAsLoopEvent.numberOfLoops = int.Parse(newValuesArray[2]);
                                 }
-                            }
-                            if (long.Parse(newValuesArray[2]) != infoAsWaitColor.x)
-                            {
-                                changed = true;
-                                infoAsWaitColor.x = int.Parse(newValuesArray[2]);
-                            }
-                            if (long.Parse(newValuesArray[3]) != infoAsWaitColor.y)
-                            {
-                                changed = true;
-                                infoAsWaitColor.y = int.Parse(newValuesArray[3]);
-                            }
-                            Color newColor = Color.FromArgb(int.Parse(newValuesArray[4]), int.Parse(newValuesArray[5]), int.Parse(newValuesArray[6]));
-                            if (!newColor.Equals(infoAsWaitColor.color))
-                            {
-                                changed = true;
-                                infoAsWaitColor.color = newColor;
-                            }
-                            if (!infoAsWaitColor.contrary.ToString().Equals(newValuesArray[7]))
-                            {
-                                changed = true;
-                                if (newValuesArray[7] == "True")
+                                int initialEvents = infoAsLoopEvent.numberOfEvents;
+                                if (long.Parse(newValuesArray[3]) != infoAsLoopEvent.numberOfEvents)
                                 {
-                                    infoAsWaitColor.contrary = true;
+                                    changed = true;
+                                    infoAsLoopEvent.numberOfEvents = int.Parse(newValuesArray[3]);
                                 }
-                                else
+                                if (!checkIfLoopsNestedCorrectly()) // there are loops who doesn't follow the rules of loops
                                 {
-                                    infoAsWaitColor.contrary = false;
+                                    // restore all the former data
+                                    infoAsLoopEvent.startTime = initialStartTime;
+                                    infoAsLoopEvent.numberOfLoops = initialLoops;
+                                    infoAsLoopEvent.numberOfEvents = initialEvents;
+                                    MessageBox.Show("The loop is partially nested. \n" +
+                                                    "It needs to be fully nested or not nested at all.");
+                                    break;
+                                }
+                                if (changed) // only if we changed something we update the macro steps
+                                {
+                                    showMacroSteps(handledMacro);
                                 }
                             }
-                            if (changed) // only if we changed something we update the macro steps
+                            else
                             {
-                                showMacroSteps(handledMacro);
-                            }
-                        }
-                        else
-                        {
-                            if (newValuesArray != null)
-                            {
-                                MessageBox.Show("Problem with the data entered");
-                            }
-                        }
-                        break;
-                    case LoopEvent infoAsLoopEvent:
-                        newValuesArray = TextDialog.ShowLoopEdit(infoAsLoopEvent.startTime.ToString(), infoAsLoopEvent.numberOfLoops.ToString(), infoAsLoopEvent.numberOfEvents.ToString());
-                        if (newValuesArray != null && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)) && newValuesArray[3].All(x => char.IsDigit(x)))
-                        {
-                            bool changed = false;
-                            initialStartTime = infoAsLoopEvent.startTime;
-                            if (long.Parse(newValuesArray[1]) != infoAsLoopEvent.startTime)
-                            {
-                                changed = true;
-                                newStartTime = long.Parse(newValuesArray[1]);
-                                infoAsLoopEvent.startTime = newStartTime;
-                                int newIndexToInsert = findIndexOfInsert(newStartTime);
-                                if (newStartTime > initialStartTime)
+                                if (newValuesArray != null)
                                 {
-                                    handledMacro.Insert(newIndexToInsert, infoAsLoopEvent);
-                                    handledMacro.RemoveAt(currentIndex);
-                                }
-                                else
-                                {
-                                    handledMacro.RemoveAt(currentIndex);
-                                    handledMacro.Insert(newIndexToInsert, infoAsLoopEvent);
+                                    MessageBox.Show("Problem with the data entered");
                                 }
                             }
-                            long initialLoops = infoAsLoopEvent.numberOfLoops;
-                            if (long.Parse(newValuesArray[2]) != infoAsLoopEvent.numberOfLoops)
-                            {
-                                changed = true;
-                                infoAsLoopEvent.numberOfLoops = int.Parse(newValuesArray[2]);
-                            }
-                            int initialEvents = infoAsLoopEvent.numberOfEvents;
-                            if (long.Parse(newValuesArray[3]) != infoAsLoopEvent.numberOfEvents)
-                            {
-                                changed = true;
-                                infoAsLoopEvent.numberOfEvents = int.Parse(newValuesArray[3]);
-                            }
-                            if (!checkIfLoopsNestedCorrectly()) // there are loops who doesn't follow the rules of loops
-                            {
-                                // restore all the former data
-                                infoAsLoopEvent.startTime = initialStartTime;
-                                infoAsLoopEvent.numberOfLoops = initialLoops;
-                                infoAsLoopEvent.numberOfEvents = initialEvents;
-                                MessageBox.Show("The loop is partially nested. \n" +
-                                                "It needs to be fully nested or not nested at all.");
-                                break;
-                            }
-                            if (changed) // only if we changed something we update the macro steps
-                            {
-                                showMacroSteps(handledMacro);
-                            }
-                        }
-                        else
-                        {
-                            if (newValuesArray != null)
-                            {
-                                MessageBox.Show("Problem with the data entered");
-                            }
-                        }
-                        break;
-                    default:
-                        MessageBox.Show("I don't know how to update this event");
-                        break;
-                }
+                            break;
+                        default:
+                            MessageBox.Show("I don't know how to update this event");
+                            break;
+                    }
 
-                } catch(Exception)
+                }
+                catch (Exception)
                 {
                     MessageBox.Show("There's a problem with the data entered.");
                 }
@@ -892,6 +929,26 @@ namespace RecordNplay
                         }
                     }
                 }
+                else if (infoAsMouse.clickType == 4)//middle Mouse Down
+                {
+                    for (int i = currentIndex + 1; i < handledMacro.Count; i++)
+                    {
+                        if (handledMacro[i] is PressedMouseEvent nextMouseInfo && nextMouseInfo.clickType == 5)
+                        {
+                            return i;
+                        }
+                    }
+                }
+                else if (infoAsMouse.clickType == 5)//middle Mouse Up
+                {
+                    for (int i = currentIndex - 1; i >= 0; i--)
+                    {
+                        if (handledMacro[i] is PressedMouseEvent nextMouseInfo && nextMouseInfo.clickType == 4)
+                        {
+                            return i;
+                        }
+                    }
+                }
             }
             return -1;
         }
@@ -921,14 +978,18 @@ namespace RecordNplay
                         listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
                         break;
                     case "Mouse": // Mouse Press Event
-                        byte clickType;
+                        byte clickType = 200;
                         if (info[1].Equals("Left Click"))
                         {
                             clickType = 0;
                         }
-                        else//right click
+                        else if (info[1].Equals("Right Click"))//right click
                         {
                             clickType = 2;
+                        }
+                        else if (info[1].Equals("Middle Click"))//right click
+                        {
+                            clickType = 4;
                         }
                         startTime = int.Parse(info[2]);
                         x = int.Parse(info[3]);
@@ -991,7 +1052,7 @@ namespace RecordNplay
             for (int i = 0; i < handledMacro.Count; i++)
             {
                 index = i;
-                if (startTime < handledMacro[i].startTime)
+                if (startTime <= handledMacro[i].startTime)
                 {
                     break;
                 }
@@ -1356,9 +1417,83 @@ namespace RecordNplay
             showMacroSteps(handledMacro);
         }
 
+        [DllImport("user32.dll")]
+        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr FindWindowA(string lpClassName, string lpWindowName);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
         private void button1_Click_1(object sender, EventArgs e)
         {
-            TextDialog.showChooseProcessDialog();
+            Process chosenProcess = TextDialog.showChooseProcessDialog();
+            if (chosenProcess != null)
+            {
+                List<IntPtr> hwndChilds = GetChildWindows(chosenProcess.MainWindowHandle);
+                hwndChilds.Insert(0, chosenProcess.MainWindowHandle);
+                foreach (IntPtr hwndChild in hwndChilds)
+                {
+                    new Task(() =>
+                    {
+                        KeysClicker.processHoldKey(hwndChild, 65, 500);
+                    }).Start();
+                }
+                //KeysClicker.processHoldKey(chosenProcess.MainWindowHandle, 65, 100);
+                //click with mouse - work -   MouseClicker.sendLeftClickToWindow(chosenProcess.MainWindowHandle, 100,100);
+
+                MessageBox.Show("Sent 'a' to " + chosenProcess.ProcessName);
+            }
+        }
+
+        //------------ some scary thing i copied from the internet -------------//
+
+        public delegate bool Win32Callback(IntPtr hwnd, IntPtr lParam);
+
+        [DllImport("user32.Dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnumChildWindows(IntPtr parentHandle, Win32Callback callback, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        static public extern IntPtr GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
+
+        private static bool EnumWindow(IntPtr handle, IntPtr pointer)
+        {
+            GCHandle gch = GCHandle.FromIntPtr(pointer);
+            List<IntPtr> list = gch.Target as List<IntPtr>;
+            if (list == null)
+                throw new InvalidCastException("GCHandle Target could not be cast as List<IntPtr>");
+            list.Add(handle);
+            return true;
+        }
+
+        public static List<IntPtr> GetChildWindows(IntPtr parent)
+        {
+            List<IntPtr> result = new List<IntPtr>();
+            GCHandle listHandle = GCHandle.Alloc(result);
+            try
+            {
+                Win32Callback childProc = new Win32Callback(EnumWindow);
+                EnumChildWindows(parent, childProc, GCHandle.ToIntPtr(listHandle));
+            }
+            finally
+            {
+                if (listHandle.IsAllocated)
+                    listHandle.Free();
+            }
+            return result;
+        }
+
+        public static IEnumerable<IntPtr> EnumAllWindows(IntPtr hwnd)
+        {
+            List<IntPtr> children = GetChildWindows(hwnd);
+            if (children == null)
+                yield break;
+            foreach (IntPtr child in children)
+            {
+                foreach (var childchild in EnumAllWindows(child))
+                    yield return childchild;
+            }
         }
     }
 }
