@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using Newtonsoft.Json;
 
 namespace RecordNplay
@@ -191,9 +192,37 @@ namespace RecordNplay
 
         public static int stepNumber = 0;
 
+        public static Random rand = new Random(); 
+
+        public double genNormalNumber(double mean, double stdDev)
+        {
+            rand = new Random(); //reuse this if you are generating many
+            double u1 = 1.0 - rand.NextDouble(); //uniform(0,1] random doubles
+            double u2 = 1.0 - rand.NextDouble();
+            double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) *
+                     Math.Sin(2.0 * Math.PI * u2); //random normal(0,1)
+            double randNormal =
+                     mean + stdDev * randStdNormal; //random normal(mean,stdDev^2)
+            return randNormal;
+        }
 
         public void runMacro(List<MacroEvent> macroSteps, string loops, string waitTime)
         {
+            double mean = 0;
+            double stdDev = 0;
+            if (randomizeCheckbox.Checked) // we need to check if the random variables are ok
+            {
+                try
+                {
+                    mean = double.Parse(randomMeanTextbox.Text);
+                    stdDev = double.Parse(randomStdTextbox.Text);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("There is a problem with the random mean/std numbers");
+                    return;
+                }
+            }
             long numOfLoops; // number of times we need to run over the macro
             int timeToWaitBetweenLoops;
             try
@@ -230,14 +259,17 @@ namespace RecordNplay
                 sw.Start();
                 stepNumber = 0;
                 List<LoopEvent> loopLists = new List<LoopEvent>();
+                double randomTime = 0;
                 while (stepNumber < macroSteps.Count)
                 {
                     if (!running) // we always check if we still need to run (maybe the user pressed esc)
                     {
                         break;
                     }
+                    //stepSemaphore.Wait(); // semaphore for avoiding busy waiting
                     if (macroSteps[stepNumber].startTime <= sw.ElapsedMilliseconds) // Didn't use sleep for an option to stop right away
                     {
+                        //Console.WriteLine("Entered in: " + sw.ElapsedMilliseconds);
                         //check if it's the main macro (that we see in listview) and if so, mark the ongoing line
                         if (listView1.InvokeRequired)
                         {
@@ -258,6 +290,7 @@ namespace RecordNplay
                                 }
                             });
                         }
+                        
                         bool isWaitEvent = false;
                         if (macroSteps[stepNumber] is WaitColorEvent) // if we need to wait, we stop our stopwatch
                         {
@@ -269,6 +302,21 @@ namespace RecordNplay
                             loopLists.Add(eventAsLoop);
                         }
                         macroSteps[stepNumber].activate();
+                        if (randomizeCheckbox.Checked)
+                        {
+                            randomTime = genNormalNumber(mean, stdDev);
+                            long newTime = sw.ElapsedMilliseconds + (long)(randomTime);
+                            if (newTime < 0) // normal distribution can give negative values
+                            {
+                                sw = new EditableStopWatch(0);
+                            }
+                            else
+                            {
+                                sw = new EditableStopWatch(newTime);
+                            }
+                            sw.Start();
+                        }
+                        //Console.WriteLine("Clicked at: " + sw.ElapsedMilliseconds);
                         if (isWaitEvent) // we continue our stopwatch when we done waiting
                         {
                             sw.Start();
@@ -280,7 +328,6 @@ namespace RecordNplay
                             {
                                 if (stepNumber - loopLists[j].startEventIndex >= loopLists[j].numberOfEvents - 1) // we need to check if we need to go back (loop)
                                 {
-
                                     if (loopLists[loopLists.Count - 1].currentLoop < loopLists[loopLists.Count - 1].numberOfLoops)
                                     {
                                         loopToJump = loopLists[j];
@@ -364,12 +411,16 @@ namespace RecordNplay
             running = false;
             sw = new EditableStopWatch(0);
             // at the end we leave all the mouse clicks, because sometimes there are bugs with them.
-            MouseClicker.leaveLeftMouse(Cursor.Position.X, Cursor.Position.Y);
-            MouseClicker.leaveRighttMouse(Cursor.Position.X, Cursor.Position.Y);
+            //MouseClicker.leaveLeftMouse(Cursor.Position.X, Cursor.Position.Y);
+            //MouseClicker.leaveRighttMouse(Cursor.Position.X, Cursor.Position.Y);
         }
 
         private async void button3_Click(object sender, EventArgs e)
         {
+            if (recording)
+            {
+                return;
+            }
             List<MacroEvent> handledMacro = whoIsHandled();
             if (handledMacro == null || handledMacro.Count < 1)
             {
@@ -644,6 +695,11 @@ namespace RecordNplay
                                     handledMacro[currentIndex].startTime = newStartTime;
                                     changed = true;
                                 }
+                                else
+                                {
+                                    MessageBox.Show("Problem with the time entered");
+                                    return;
+                                }
                                 if (!initialClickType.Equals(newClickType))
                                 {
                                     changed = true;
@@ -851,36 +907,40 @@ namespace RecordNplay
         private void DeleteStep_Click(object sender, EventArgs e)
         {
             List<MacroEvent> handledMacro = whoIsHandled();
-            if (listView1.SelectedItems.Count == 1)
+            foreach (ListViewItem listViewItem in listView1.SelectedItems)
             {
-                int currentIndex = listView1.SelectedIndices[0];
-                if (handledMacro[currentIndex] is PressedKeyEvent)
+                if (!listView1.Items.Contains(listViewItem))
                 {
-                    handledMacro.RemoveAt(currentIndex);
+                    continue;
+                }
+                int currentIndex = listViewItem.Index;
+                if (handledMacro[currentIndex] is PressedMouseEvent)
+                {
+                    int coupleIndex = getIndexOfCoupleClick(currentIndex, ((PressedMouseEvent)handledMacro[currentIndex]).clickType);
+                    if (coupleIndex > currentIndex)
+                    {
+                        handledMacro.RemoveAt(listViewItem.Index);
+                        listViewItem.Remove();
+
+                        handledMacro.RemoveAt(coupleIndex - 1);
+                        listView1.Items[coupleIndex - 1].Remove();
+                    }
+                    else
+                    {
+                        handledMacro.RemoveAt(coupleIndex);
+                        listView1.Items[coupleIndex].Remove();
+                        
+                        handledMacro.RemoveAt(listViewItem.Index);
+                        listViewItem.Remove();
+                    }
                 }
                 else
                 {
-                    int coupleIndex = getIndexOfCoupleClick(currentIndex, ((PressedMouseEvent)handledMacro[currentIndex]).clickType);
-                    if (coupleIndex > currentIndex)//mouse down
-                    {
-                        handledMacro.RemoveAt(coupleIndex);
-
-                        handledMacro.RemoveAt(currentIndex);
-                    }
-                    else//mouse up
-                    {
-                        handledMacro.RemoveAt(currentIndex);
-
-                        handledMacro.RemoveAt(coupleIndex);
-                    }
-
+                    handledMacro.RemoveAt(listViewItem.Index);
+                    listViewItem.Remove();
                 }
-                showMacroSteps(handledMacro);
             }
-            else
-            {
-                MessageBox.Show("Please choose a step to delete");
-            }
+            showMacroSteps(handledMacro);
         }
 
         private int getIndexOfCoupleClick(int currentIndex, int clickType)
@@ -1108,7 +1168,7 @@ namespace RecordNplay
                 {
                     slot2 = writingChars;
                     macro2Loop.Text = currentLoop.Text;
-                    macro2Wait.Text = currentWait.Text;
+                    randomMeanTextbox.Text = currentWait.Text;
                     slot2Button.Text = "slot2: " + listBox1.SelectedItem.ToString();
                 }
                 else
@@ -1359,63 +1419,6 @@ namespace RecordNplay
             return true;
         }
 
-        private bool checkIfEveryMouseClickSelectedHasItsCouple()
-        {
-            if (listView1.SelectedIndices == null)
-            {
-                return true;
-            }
-            List<MacroEvent> handledMacro = whoIsHandled();
-            foreach (int index in listView1.SelectedIndices)
-            {
-                if (handledMacro[index] is PressedMouseEvent asPressedMouse && !listView1.SelectedIndices.Contains(getIndexOfCoupleClick(index, asPressedMouse.clickType)))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private void copyLinesButton_Click(object sender, EventArgs e)
-        {
-            if (writingChars == null || writingChars.Count < 1)
-            {
-                MessageBox.Show("In order to copy lines you need to choose lines");
-                return;
-            }
-            if (listView1.SelectedIndices.Count < 1)
-            {
-                return;
-            }
-            if (!checkIfEveryMouseClickSelectedHasItsCouple())
-            {
-                MessageBox.Show("You need to select mouse pressed couple as well(in example you marked only mouse release or pressed without the other one)");
-                return;
-            }
-            List<MacroEvent> handledMacro = whoIsHandled();
-            long macroEnd;
-            if (handledMacro.Last() is PressedKeyEvent lastAsPressedKey)
-            {
-                macroEnd = lastAsPressedKey.startTime + lastAsPressedKey.duration + 1;
-            }
-            else
-            {
-                macroEnd = handledMacro[handledMacro.Count].startTime;
-            }
-            foreach (int index in listView1.SelectedIndices)
-            {
-                if (handledMacro[index] is PressedKeyEvent asPressedKey)
-                {
-                    handledMacro.Add(new PressedKeyEvent(asPressedKey));
-                }
-                else
-                {
-                    handledMacro.Add(new PressedMouseEvent((PressedMouseEvent)handledMacro[index]));
-                }
-                handledMacro.Last().startTime += macroEnd;
-            }
-            showMacroSteps(handledMacro);
-        }
 
         [DllImport("user32.dll")]
         public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
@@ -1436,7 +1439,7 @@ namespace RecordNplay
                 {
                     new Task(() =>
                     {
-                        KeysClicker.processHoldKey(hwndChild, 65, 500);
+                        KeysClicker.processHoldKey(hwndChild, 65, 100);
                     }).Start();
                 }
                 //KeysClicker.processHoldKey(chosenProcess.MainWindowHandle, 65, 100);

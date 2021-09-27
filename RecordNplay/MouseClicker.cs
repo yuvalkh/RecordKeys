@@ -50,7 +50,7 @@ namespace RecordNplay
             {
                 iterPoint = new PointF(iterPoint.X + slope.X, iterPoint.Y + slope.Y);
                 SetCursorPos(Point.Round(iterPoint).X, Point.Round(iterPoint).Y);
-                Thread.Sleep(10);
+                Thread.Sleep(2);
             }
 
             // Move the mouse to the final destination.

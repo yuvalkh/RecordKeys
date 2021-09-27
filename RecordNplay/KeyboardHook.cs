@@ -80,7 +80,7 @@ namespace RecordNplay
                         {
                             new Thread(() =>
                             {
-                                form1.runMacro(Form1.slot2, form1.macro2Loop.Text, form1.macro2Wait.Text);
+                                form1.runMacro(Form1.slot2, form1.macro2Loop.Text, form1.randomMeanTextbox.Text);
                             }).Start();
                         }
                         if (form1.comboBox3.Text.Equals(e.KeyCode.ToString()) && Form1.slot3 != null)

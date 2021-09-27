@@ -65,7 +65,7 @@
             this.label12 = new System.Windows.Forms.Label();
             this.macro1Loop = new System.Windows.Forms.TextBox();
             this.label13 = new System.Windows.Forms.Label();
-            this.macro2Wait = new System.Windows.Forms.TextBox();
+            this.randomMeanTextbox = new System.Windows.Forms.TextBox();
             this.label14 = new System.Windows.Forms.Label();
             this.macro2Loop = new System.Windows.Forms.TextBox();
             this.label15 = new System.Windows.Forms.Label();
@@ -78,8 +78,11 @@
             this.showMacro2 = new System.Windows.Forms.Button();
             this.showMacro3 = new System.Windows.Forms.Button();
             this.showCurrent = new System.Windows.Forms.Button();
-            this.copyLinesButton = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
+            this.randomizeCheckbox = new System.Windows.Forms.CheckBox();
+            this.label18 = new System.Windows.Forms.Label();
+            this.randomStdTextbox = new System.Windows.Forms.TextBox();
+            this.label19 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label4
@@ -126,7 +129,7 @@
             // 
             this.DeleteButton.Location = new System.Drawing.Point(368, 387);
             this.DeleteButton.Name = "DeleteButton";
-            this.DeleteButton.Size = new System.Drawing.Size(75, 57);
+            this.DeleteButton.Size = new System.Drawing.Size(75, 72);
             this.DeleteButton.TabIndex = 7;
             this.DeleteButton.Text = "Delete Macro";
             this.DeleteButton.UseVisualStyleBackColor = true;
@@ -166,17 +169,17 @@
             // 
             this.DeleteStep.Location = new System.Drawing.Point(500, 387);
             this.DeleteStep.Name = "DeleteStep";
-            this.DeleteStep.Size = new System.Drawing.Size(68, 57);
+            this.DeleteStep.Size = new System.Drawing.Size(66, 72);
             this.DeleteStep.TabIndex = 13;
-            this.DeleteStep.Text = "Delete Step";
+            this.DeleteStep.Text = "Delete Steps";
             this.DeleteStep.UseVisualStyleBackColor = true;
             this.DeleteStep.Click += new System.EventHandler(this.DeleteStep_Click);
             // 
             // AddStep
             // 
-            this.AddStep.Location = new System.Drawing.Point(752, 387);
+            this.AddStep.Location = new System.Drawing.Point(741, 387);
             this.AddStep.Name = "AddStep";
-            this.AddStep.Size = new System.Drawing.Size(66, 57);
+            this.AddStep.Size = new System.Drawing.Size(66, 72);
             this.AddStep.TabIndex = 14;
             this.AddStep.Text = "Add Step";
             this.AddStep.UseVisualStyleBackColor = true;
@@ -236,14 +239,14 @@
             // timer1
             // 
             this.timer1.Enabled = true;
-            this.timer1.Interval = 10;
+            this.timer1.Interval = 1;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // label3
             // 
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(-2, 427);
+            this.label3.Location = new System.Drawing.Point(-3, 433);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(170, 29);
             this.label3.TabIndex = 21;
@@ -271,7 +274,7 @@
             // 
             this.label7.AutoSize = true;
             this.label7.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label7.Location = new System.Drawing.Point(173, 427);
+            this.label7.Location = new System.Drawing.Point(178, 439);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(167, 17);
             this.label7.TabIndex = 24;
@@ -368,9 +371,9 @@
             // changeStart
             // 
             this.changeStart.Font = new System.Drawing.Font("Microsoft Sans Serif", 7F);
-            this.changeStart.Location = new System.Drawing.Point(574, 386);
+            this.changeStart.Location = new System.Drawing.Point(572, 386);
             this.changeStart.Name = "changeStart";
-            this.changeStart.Size = new System.Drawing.Size(172, 26);
+            this.changeStart.Size = new System.Drawing.Size(166, 26);
             this.changeStart.TabIndex = 34;
             this.changeStart.Text = "Change Start Macro Time";
             this.changeStart.UseVisualStyleBackColor = true;
@@ -432,13 +435,13 @@
             this.label13.TabIndex = 37;
             this.label13.Text = "Loops:";
             // 
-            // macro2Wait
+            // randomMeanTextbox
             // 
-            this.macro2Wait.Location = new System.Drawing.Point(229, 297);
-            this.macro2Wait.Name = "macro2Wait";
-            this.macro2Wait.Size = new System.Drawing.Size(74, 22);
-            this.macro2Wait.TabIndex = 44;
-            this.macro2Wait.Text = "0";
+            this.randomMeanTextbox.Location = new System.Drawing.Point(868, 412);
+            this.randomMeanTextbox.Name = "randomMeanTextbox";
+            this.randomMeanTextbox.Size = new System.Drawing.Size(49, 22);
+            this.randomMeanTextbox.TabIndex = 44;
+            this.randomMeanTextbox.Text = "0";
             // 
             // label14
             // 
@@ -507,9 +510,9 @@
             // makeMacroFast
             // 
             this.makeMacroFast.Font = new System.Drawing.Font("Microsoft Sans Serif", 7F);
-            this.makeMacroFast.Location = new System.Drawing.Point(574, 418);
+            this.makeMacroFast.Location = new System.Drawing.Point(572, 433);
             this.makeMacroFast.Name = "makeMacroFast";
-            this.makeMacroFast.Size = new System.Drawing.Size(172, 26);
+            this.makeMacroFast.Size = new System.Drawing.Size(166, 26);
             this.makeMacroFast.TabIndex = 49;
             this.makeMacroFast.Text = "Make macro faster";
             this.makeMacroFast.UseVisualStyleBackColor = true;
@@ -555,16 +558,6 @@
             this.showCurrent.UseVisualStyleBackColor = true;
             this.showCurrent.Click += new System.EventHandler(this.showCurrent_Click);
             // 
-            // copyLinesButton
-            // 
-            this.copyLinesButton.Location = new System.Drawing.Point(824, 387);
-            this.copyLinesButton.Name = "copyLinesButton";
-            this.copyLinesButton.Size = new System.Drawing.Size(93, 57);
-            this.copyLinesButton.TabIndex = 61;
-            this.copyLinesButton.Text = "Copy Lines to the End";
-            this.copyLinesButton.UseVisualStyleBackColor = true;
-            this.copyLinesButton.Click += new System.EventHandler(this.copyLinesButton_Click);
-            // 
             // button1
             // 
             this.button1.Location = new System.Drawing.Point(923, 72);
@@ -575,23 +568,64 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click_1);
             // 
+            // randomizeCheckbox
+            // 
+            this.randomizeCheckbox.AutoSize = true;
+            this.randomizeCheckbox.Location = new System.Drawing.Point(815, 387);
+            this.randomizeCheckbox.Name = "randomizeCheckbox";
+            this.randomizeCheckbox.Size = new System.Drawing.Size(101, 21);
+            this.randomizeCheckbox.TabIndex = 63;
+            this.randomizeCheckbox.Text = "Randomize";
+            this.randomizeCheckbox.UseVisualStyleBackColor = true;
+            // 
+            // label18
+            // 
+            this.label18.AutoSize = true;
+            this.label18.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label18.Location = new System.Drawing.Point(812, 414);
+            this.label18.Name = "label18";
+            this.label18.Size = new System.Drawing.Size(45, 18);
+            this.label18.TabIndex = 47;
+            this.label18.Text = "mean";
+            // 
+            // randomStdTextbox
+            // 
+            this.randomStdTextbox.Location = new System.Drawing.Point(867, 437);
+            this.randomStdTextbox.Name = "randomStdTextbox";
+            this.randomStdTextbox.Size = new System.Drawing.Size(50, 22);
+            this.randomStdTextbox.TabIndex = 44;
+            this.randomStdTextbox.Text = "0";
+            // 
+            // label19
+            // 
+            this.label19.AutoSize = true;
+            this.label19.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label19.Location = new System.Drawing.Point(821, 437);
+            this.label19.Name = "label19";
+            this.label19.Size = new System.Drawing.Size(28, 18);
+            this.label19.TabIndex = 47;
+            this.label19.Text = "std";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1057, 453);
+            this.ClientSize = new System.Drawing.Size(1057, 474);
+            this.Controls.Add(this.randomizeCheckbox);
             this.Controls.Add(this.button1);
-            this.Controls.Add(this.copyLinesButton);
             this.Controls.Add(this.showCurrent);
             this.Controls.Add(this.showMacro3);
             this.Controls.Add(this.showMacro2);
             this.Controls.Add(this.showMacro1);
             this.Controls.Add(this.makeMacroFast);
             this.Controls.Add(this.macro3Wait);
+            this.Controls.Add(this.label19);
+            this.Controls.Add(this.label18);
             this.Controls.Add(this.label16);
             this.Controls.Add(this.macro3Loop);
             this.Controls.Add(this.label17);
-            this.Controls.Add(this.macro2Wait);
+            this.Controls.Add(this.randomStdTextbox);
+            this.Controls.Add(this.randomMeanTextbox);
             this.Controls.Add(this.label14);
             this.Controls.Add(this.macro2Loop);
             this.Controls.Add(this.label15);
@@ -676,7 +710,7 @@
         private System.Windows.Forms.Label label12;
         public System.Windows.Forms.TextBox macro1Loop;
         private System.Windows.Forms.Label label13;
-        public System.Windows.Forms.TextBox macro2Wait;
+        public System.Windows.Forms.TextBox randomMeanTextbox;
         private System.Windows.Forms.Label label14;
         public System.Windows.Forms.TextBox macro2Loop;
         private System.Windows.Forms.Label label15;
@@ -689,8 +723,11 @@
         private System.Windows.Forms.Button showMacro2;
         private System.Windows.Forms.Button showMacro3;
         private System.Windows.Forms.Button showCurrent;
-        private System.Windows.Forms.Button copyLinesButton;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.CheckBox randomizeCheckbox;
+        private System.Windows.Forms.Label label18;
+        public System.Windows.Forms.TextBox randomStdTextbox;
+        private System.Windows.Forms.Label label19;
     }
 }
 

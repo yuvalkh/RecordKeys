@@ -40,14 +40,15 @@ namespace RecordNplay
 
         public static void processHoldKey(IntPtr hWnd,byte keyCode, int duration)
         {
-            /*PostMessage(hWnd, VM_KEYDOWN, (IntPtr)65, IntPtr.Zero);
-			PostMessage(hWnd, VM_CHAR, (IntPtr)65, IntPtr.Zero);
+            PostMessage(hWnd, VM_KEYDOWN, (IntPtr)65, IntPtr.Zero);
+			//PostMessage(hWnd, VM_CHAR, (IntPtr)65, IntPtr.Zero);
 			//new ManualResetEvent(false).WaitOne(duration);
-			PostMessage(hWnd, VM_KEYUP, (IntPtr)65, IntPtr.Zero);*/
+			PostMessage(hWnd, VM_KEYUP, (IntPtr)65, IntPtr.Zero);
             
 
-			PostMessage(hWnd, VM_KEYDOWN, (IntPtr)VKeys.KEY_A, GetLParam(1, VKeys.KEY_A, 0, 0, 0, 0));
-			PostMessage(hWnd, VM_KEYUP, (IntPtr)VKeys.KEY_A, GetLParam(1, VKeys.KEY_A, 0, 0, 0, 0));
+			/*PostMessage(hWnd, VM_KEYDOWN, (IntPtr)VKeys.KEY_A, GetLParam(1, VKeys.KEY_A, 0, 0, 0, 0));
+			Thread.Sleep(1000);
+			PostMessage(hWnd, VM_KEYUP, (IntPtr)VKeys.KEY_A, GetLParam(1, VKeys.KEY_A, 0, 0, 0, 0));*/
         }
 
         ////////////////////////////////////////
