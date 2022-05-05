@@ -93,6 +93,53 @@ namespace RecordNplay
 
             return prompt.ShowDialog() == DialogResult.OK ? new string[] { prompt.Text, comboBox1.Text, textBox2.Text,textBox3.Text,textBox4.Text} : null;
         }
+        public static string[] ShowMouseWheelEdit(string startTime, string x, string y,string delta)
+        {
+            Form prompt = new Form()
+            {
+                Width = 400,
+                Height = 200,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                Text = "Mouse Scroll",
+                StartPosition = FormStartPosition.CenterScreen
+            };
+
+            Label showX = new Label() { Left = 250, Top = 70 };
+            Label showY = new Label() { Left = 250, Top = 100 };
+            Timer timerChangingCursorLabel = new Timer() { Enabled = true, Interval = 1 };
+            // use this when the resolution is set to 125% instead of 100%
+            //timerChangingCursorLabel.Tick += (sender, e) => { showX.Text = "currentX:" + (int)(Cursor.Position.X*1.25); showY.Text = "currentY:" + (int)(Cursor.Position.Y*1.25); };
+            timerChangingCursorLabel.Tick += (sender, e) => { showX.Text = "currentX:" + (int)(Cursor.Position.X); showY.Text = "currentY:" + (int)(Cursor.Position.Y); };
+            Label textLabel1 = new Label() { Left = 20, Top = 10, Text = "Delta:", Width = 60 };
+            TextBox textBox1 = new TextBox() { Left = 100, Top = 10, Width = 150 };
+            Label textLabel2 = new Label() { Left = 20, Top = 40, Text = "Time:", Width = 60 };
+            TextBox textBox2 = new TextBox() { Left = 100, Top = 40, Width = 150 };
+            Label textLabel3 = new Label() { Left = 20, Top = 70, Text = "X:", Width = 60 };
+            TextBox textBox3 = new TextBox() { Left = 100, Top = 70, Width = 150 };
+            Label textLabel4 = new Label() { Left = 20, Top = 100, Text = "Y:", Width = 60 };
+            TextBox textBox4 = new TextBox() { Left = 100, Top = 100, Width = 150 };
+            Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 150, Top = 130, DialogResult = DialogResult.OK };
+            textBox1.Text = delta;
+            textBox2.Text = startTime;
+            textBox3.Text = x;
+            textBox4.Text = y;
+            confirmation.Click += (sender, e) => { prompt.Close(); };
+            prompt.Controls.Add(textLabel1);
+            prompt.Controls.Add(textBox1);
+            prompt.Controls.Add(textLabel2);
+            prompt.Controls.Add(textBox2);
+            prompt.Controls.Add(textLabel3);
+            prompt.Controls.Add(textBox3);
+            prompt.Controls.Add(textLabel4);
+            prompt.Controls.Add(textBox4);
+            prompt.Controls.Add(showX);
+            prompt.Controls.Add(showY);
+            prompt.Controls.Add(confirmation);
+            prompt.AcceptButton = confirmation;
+
+            return prompt.ShowDialog() == DialogResult.OK ? new string[] { prompt.Text, textBox1.Text, textBox2.Text, textBox3.Text, textBox4.Text } : null;
+        }
         public static string[] ShowKeyEdit(string initialDuration, string initialKeyCode,string initialTime)
         {
             Form prompt = new Form()
@@ -284,6 +331,35 @@ namespace RecordNplay
 
             return prompt.ShowDialog() == DialogResult.OK ? new string[] { prompt.Text,timeTextbox.Text, loopTextbox.Text, eventsTextbox.Text} : null;
         }
+        private static string showChooseMouseEvent()
+        {
+            string returnedString = null;
+            Form prompt = new Form()
+            {
+                Width = 350,
+                Height = 100,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Choose Mouse Event",
+                MaximizeBox = false,
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            Button MouseClickButton = new Button() { Left = 20, Top = 10, Text = "Mouse Click Event", Width = 130 };
+            Button MouseWheelButton = new Button() { Left = 170, Top = 10, Text = "Mouse Wheel Event", Width = 130 };
+            MouseClickButton.Click += (sender, args) =>
+            {
+                returnedString = "Mouse Click";
+                prompt.Close();
+            };
+            MouseWheelButton.Click += (sender, args) =>
+            {
+                returnedString = "Mouse Wheel";
+                prompt.Close();
+            };
+            prompt.Controls.Add(MouseClickButton);
+            prompt.Controls.Add(MouseWheelButton);
+            prompt.ShowDialog();
+            return returnedString;
+        }
         private static string showChooseEvent()
         {
             string returnedString = null;
@@ -333,6 +409,14 @@ namespace RecordNplay
             switch (choose)
             {
                 case "Mouse":
+                    string mouseChoose = showChooseMouseEvent();
+                    switch (mouseChoose)
+                    {
+                        case "Mouse Click":
+                            return ShowMouseEdit(0, "", "", "");
+                        case "Mouse Wheel":
+                            return ShowMouseWheelEdit("", "", "", "");
+                    }
                     return ShowMouseEdit(0, "", "", "");
                 case "Key":
                     return ShowKeyEdit("", "", "");

@@ -41,39 +41,43 @@ namespace RecordNplay
                 Form1.writingChars.Add(new PressedMouseEvent(0, Cursor.Position.X, Cursor.Position.Y,Form1.sw.ElapsedMilliseconds));
                 //Console.WriteLine("You clicked left button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
-            if (nCode >= 0 && MouseMessages.WM_LBUTTONUP == (MouseMessages)wParam)
+            else if (nCode >= 0 && MouseMessages.WM_LBUTTONUP == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseEvent(1, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
                 //Console.WriteLine("You removed left button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
-            if (nCode >= 0 && MouseMessages.WM_RBUTTONDOWN == (MouseMessages)wParam)
+            else if (nCode >= 0 && MouseMessages.WM_RBUTTONDOWN == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseEvent(2, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
                 //Console.WriteLine("You clicked right button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
-            if (nCode >= 0 && MouseMessages.WM_RBUTTONUP == (MouseMessages)wParam)
+            else if (nCode >= 0 && MouseMessages.WM_RBUTTONUP == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseEvent(3, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
                 //Console.WriteLine("You removed right button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
-            if (nCode >= 0 && MouseMessages.WM_MBUTTONDOWN == (MouseMessages)wParam)
+            else if (nCode >= 0 && MouseMessages.WM_MBUTTONDOWN == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseEvent(4, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
                 Console.WriteLine("You pressed middle button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
-            if (nCode >= 0 && MouseMessages.WM_MBUTTONUP == (MouseMessages)wParam)
+            else if (nCode >= 0 && MouseMessages.WM_MBUTTONUP == (MouseMessages)wParam)
             {
                 Form1.writingChars.Add(new PressedMouseEvent(5, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds));
                 Console.WriteLine("You removed middle button at x:" + Cursor.Position.X.ToString() + " y:" + Cursor.Position.Y.ToString());
             }
-            /*if (nCode >= 0 && MouseMessages.WM_MOUSEWHEEL == (MouseMessages)wParam)
+            else if (nCode >= 0 && MouseMessages.WM_MOUSEWHEEL == (MouseMessages)wParam)
             {
-                Console.WriteLine("The delta is: " + ((short)(wParam))); 
-            }*/
+                //Console.WriteLine("The delta is: " + ((short)((int)wParam >> 16)));
+                MSLLHOOKSTRUCT lparam = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
+                int wheelvalue = (Int16)(lparam.mouseData >> 16) < 0 ? -120 : 120; // Forward = 120, Backward = -120
+                Form1.writingChars.Add(new MouseWheelEvent(6, Cursor.Position.X, Cursor.Position.Y, Form1.sw.ElapsedMilliseconds, wheelvalue));
+            }
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
 
         private const int WH_MOUSE_LL = 14;
+
 
         private enum MouseMessages
         {
@@ -115,6 +119,7 @@ namespace RecordNplay
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode,
           IntPtr wParam, IntPtr lParam);
+
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);

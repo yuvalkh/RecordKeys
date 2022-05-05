@@ -38,33 +38,59 @@ namespace RecordNplay
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
-        public static void processHoldKey(IntPtr hWnd,byte keyCode, int duration)
+
+		public static void processHoldKey(IntPtr hWnd,byte keyCode, int duration)
         {
-            PostMessage(hWnd, VM_KEYDOWN, (IntPtr)65, IntPtr.Zero);
-			//PostMessage(hWnd, VM_CHAR, (IntPtr)65, IntPtr.Zero);
-			//new ManualResetEvent(false).WaitOne(duration);
-			PostMessage(hWnd, VM_KEYUP, (IntPtr)65, IntPtr.Zero);
+			uint repeatCount = 1;
+			uint scanCode = MapVirtualKey(keyCode, 0);
+			uint extended = 0;
+			uint context = 0;
+			uint previousState = 0;
+			uint transition = 0;
+
+			uint lParamDown;
+			uint lParamUp;
+
+			lParamDown = repeatCount
+				| (scanCode << 16)
+				| (extended << 24)
+				| (context << 29)
+				| (previousState << 30)
+				| (transition << 31);
+			previousState = 1;
+			transition = 1;
+			lParamUp = repeatCount
+				| (scanCode << 16)
+				| (extended << 24)
+				| (context << 29)
+				| (previousState << 30)
+				| (transition << 31);
+
+			PostMessage(hWnd, VM_KEYDOWN, (IntPtr)keyCode, unchecked((IntPtr)(int)lParamDown));
+			//Thread.Sleep(duration);
+			new ManualResetEvent(false).WaitOne(duration);
+			PostMessage(hWnd, VM_KEYUP, (IntPtr)keyCode, unchecked((IntPtr)(int)lParamUp));
             
 
 			/*PostMessage(hWnd, VM_KEYDOWN, (IntPtr)VKeys.KEY_A, GetLParam(1, VKeys.KEY_A, 0, 0, 0, 0));
 			Thread.Sleep(1000);
 			PostMessage(hWnd, VM_KEYUP, (IntPtr)VKeys.KEY_A, GetLParam(1, VKeys.KEY_A, 0, 0, 0, 0));*/
         }
+		
+		////////////////////////////////////////
+		////////////////////////////////////////
+		////////////////////////////////////////
+		////////////////////////////////////////
+		////////////////////////////////////////
+		////////////////////////////////////////
+		//////////////////////////////////////
+		////////////////
+		///
 
-        ////////////////////////////////////////
-        ////////////////////////////////////////
-        ////////////////////////////////////////
-        ////////////////////////////////////////
-        ////////////////////////////////////////
-        ////////////////////////////////////////
-        //////////////////////////////////////
-        ////////////////
-        ///
-        
-        
-        
-        
-        [DllImport("user32.dll")]
+
+
+
+		[DllImport("user32.dll")]
         private static extern uint MapVirtualKey(uint uCode, uint uMapType);
 
 		private const uint MAPVK_VK_TO_VSC_EX = 0x04;

@@ -266,10 +266,8 @@ namespace RecordNplay
                     {
                         break;
                     }
-                    //stepSemaphore.Wait(); // semaphore for avoiding busy waiting
                     if (macroSteps[stepNumber].startTime <= sw.ElapsedMilliseconds) // Didn't use sleep for an option to stop right away
                     {
-                        //Console.WriteLine("Entered in: " + sw.ElapsedMilliseconds);
                         //check if it's the main macro (that we see in listview) and if so, mark the ongoing line
                         if (listView1.InvokeRequired)
                         {
@@ -354,34 +352,6 @@ namespace RecordNplay
                                 sw = new EditableStopWatch(loopToJump.startEventTime);
                                 sw.Start();
                             }
-                            /*
-                            if (stepNumber - loopLists[loopLists.Count - 1].startEventIndex >= loopLists[loopLists.Count - 1].numberOfEvents - 1) // we need to check if we need to go back (loop)
-                            {
-                                if (loopLists[loopLists.Count - 1].currentLoop >= loopLists[loopLists.Count - 1].numberOfLoops)
-                                {
-                                    loopLists.RemoveAt(loopLists.Count - 1); // we remove that loop because we done with it
-                                }
-                                else
-                                {
-                                    sw.Stop();
-                                    loopLists[loopLists.Count - 1].currentLoop++;
-                                    if (listView1.InvokeRequired)
-                                    {
-                                        listView1.Invoke((MethodInvoker)delegate ()
-                                        {
-                                            listView1.Items[stepNumber].BackColor = Color.White;
-                                        });
-                                    }
-                                    stepNumber = loopLists[loopLists.Count - 1].startEventIndex - 1; // We do minus 1 because we do stepNumber++ in the end
-                                    sw = new EditableStopWatch(loopLists[loopLists.Count - 1].startEventTime);
-                                    sw.Start();
-                                }
-                            }    
-                            */
-
-
-
-
                         }
                         stepNumber++;
                     }
@@ -662,6 +632,63 @@ namespace RecordNplay
                                 }
                             }
                             break;
+                        case MouseWheelEvent infoAsMouseWheel:
+                            initialStartTime = handledMacro[currentIndex].startTime;
+                            int initialDelta = infoAsMouseWheel.delta;
+                            int newDelta;
+                            int initialWheelX = infoAsMouseWheel.x;
+                            int newWheelX;
+                            int initialWheelY = infoAsMouseWheel.y;
+                            int newWheelY;
+                            newValueInString = TextDialog.ShowMouseWheelEdit(infoAsMouseWheel.startTime.ToString(), initialWheelX.ToString(), initialWheelY.ToString(), infoAsMouseWheel.delta.ToString());
+                            if (newValueInString != null && int.TryParse(newValueInString[1], out _) && newValueInString[2].All(x => char.IsDigit(x)) && newValueInString[3].All(x => char.IsDigit(x)) && newValueInString[4].All(x => char.IsDigit(x)))
+                            {
+                                bool changed = false;
+                                newDelta = int.Parse(newValueInString[1]);
+                                newStartTime = int.Parse(newValueInString[2]);
+                                newWheelX = int.Parse(newValueInString[3]);
+                                newWheelY = int.Parse(newValueInString[4]);
+                                if (newStartTime != initialStartTime)
+                                {
+                                    if (checkIfTimeIsValid(newStartTime, currentIndex))
+                                    {
+                                        handledMacro[currentIndex].startTime = newStartTime;
+                                        changed = true;
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Problem with the time entered");
+                                        return;
+                                    }
+                                }
+                                if (initialWheelX != newWheelX)
+                                {
+                                    infoAsMouseWheel.x = newWheelX;
+                                    changed = true;
+                                }
+                                if (initialWheelY != newWheelY)
+                                {
+                                    infoAsMouseWheel.y = newWheelY;
+                                    changed = true;
+                                }
+                                if (initialDelta != newDelta)
+                                {
+                                    infoAsMouseWheel.delta = newDelta;
+                                    changed = true;
+                                }
+                                if (changed)
+                                {
+                                    showMacroSteps(handledMacro);
+                                }
+                            }
+                            else
+                            {
+                                if (newValueInString != null)
+                                {
+                                    MessageBox.Show("Problem with the time entered");
+                                }
+                            }
+                            break;
                         case PressedMouseEvent infoAsMouse:
                             initialStartTime = handledMacro[currentIndex].startTime;
                             string initialClickType = "";
@@ -690,15 +717,18 @@ namespace RecordNplay
                                 newStartTime = int.Parse(newValueInString[2]);
                                 newX = int.Parse(newValueInString[3]);
                                 newY = int.Parse(newValueInString[4]);
-                                if (newStartTime != initialStartTime && checkIfTimeIsValid(newStartTime, currentIndex))
+                                if (newStartTime != initialStartTime)
                                 {
-                                    handledMacro[currentIndex].startTime = newStartTime;
-                                    changed = true;
-                                }
-                                else
-                                {
-                                    MessageBox.Show("Problem with the time entered");
-                                    return;
+                                    if (checkIfTimeIsValid(newStartTime, currentIndex))
+                                    {
+                                        handledMacro[currentIndex].startTime = newStartTime;
+                                        changed = true;
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Problem with the time entered");
+                                        return;
+                                    }
                                 }
                                 if (!initialClickType.Equals(newClickType))
                                 {
@@ -1435,17 +1465,17 @@ namespace RecordNplay
             {
                 List<IntPtr> hwndChilds = GetChildWindows(chosenProcess.MainWindowHandle);
                 hwndChilds.Insert(0, chosenProcess.MainWindowHandle);
+                Thread.Sleep(2000);
+                Console.WriteLine("Sending !!");
                 foreach (IntPtr hwndChild in hwndChilds)
                 {
-                    new Task(() =>
-                    {
-                        KeysClicker.processHoldKey(hwndChild, 65, 100);
-                    }).Start();
+                    //new Task(() =>
+                    //{
+                        KeysClicker.processHoldKey(hwndChild, 65, 100); // working but not on directX windows
+                    //}).Start();
                 }
                 //KeysClicker.processHoldKey(chosenProcess.MainWindowHandle, 65, 100);
-                //click with mouse - work -   MouseClicker.sendLeftClickToWindow(chosenProcess.MainWindowHandle, 100,100);
-
-                MessageBox.Show("Sent 'a' to " + chosenProcess.ProcessName);
+                //click with mouse - work even with directX windows -   MouseClicker.sendLeftClickToWindow(chosenProcess.MainWindowHandle, 100,100);
             }
         }
 
