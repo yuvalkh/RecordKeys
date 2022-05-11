@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
 using WindowsInput.Native;
+using System.Linq;
 
 namespace RecordNplay
 {
@@ -69,34 +70,37 @@ namespace RecordNplay
                     string currentProgram = GetFocusedProcessName();
                     if (!currentProgram.Equals("RecordNplay"))
                     {
-                        if (form1.comboBox1.Text.Equals(e.KeyCode.ToString()) && Form1.slot1 != null)
-                        {
-                            new Thread(() =>
-                            {
-                                form1.runMacro(Form1.slot1, form1.macro1Loop.Text, form1.macro1Wait.Text);
-                            }).Start();
-                        }
-                        if (form1.comboBox2.Text.Equals(e.KeyCode.ToString()) && Form1.slot2 != null)
-                        {
-                            new Thread(() =>
-                            {
-                                form1.runMacro(Form1.slot2, form1.macro2Loop.Text, form1.randomMeanTextbox.Text);
-                            }).Start();
-                        }
-                        if (form1.comboBox3.Text.Equals(e.KeyCode.ToString()) && Form1.slot3 != null)
-                        {
-                            new Thread(() =>
-                            {
-                                form1.runMacro(Form1.slot3, form1.macro3Loop.Text, form1.macro3Wait.Text);
-                            }).Start();
-                        }
-                        if (form1.comboBox4.Text.Equals(e.KeyCode.ToString()) && Form1.writingChars != null)
+                        Console.WriteLine("Combination: " + isCombination(0));
+                        Console.WriteLine("Slot: " + Form1.slot1);
+                        if (isCombination(0) && Form1.writingChars != null)
                         {
                             new Thread(() =>
                             {
                                 form1.runMacro(Form1.writingChars, form1.currentLoop.Text, form1.currentWait.Text);
                             }).Start();
                         }
+                        if (isCombination(1) && Form1.slot1 != null)
+                        {
+                            new Thread(() =>
+                            {
+                                form1.runMacro(Form1.slot1, form1.macro1Loop.Text, form1.macro1Wait.Text);
+                            }).Start();
+                        }
+                        if (isCombination(2) && Form1.slot2 != null)
+                        {
+                            new Thread(() =>
+                            {
+                                form1.runMacro(Form1.slot2, form1.macro2Loop.Text, form1.randomMeanTextbox.Text);
+                            }).Start();
+                        }
+                        if (isCombination(3) && Form1.slot3 != null)
+                        {
+                            new Thread(() =>
+                            {
+                                form1.runMacro(Form1.slot3, form1.macro3Loop.Text, form1.macro3Wait.Text);
+                            }).Start();
+                        }
+                        
                     }
                 }
             }
@@ -112,8 +116,53 @@ namespace RecordNplay
                     KeysClicker.clickEscape--; //true when pc is clicking so we turn it to false right after so we know a human is pressing after
                 }
             }
-                //Console.WriteLine("Up\t" + e.KeyCode.ToString());
+            keysHolding.Remove(e.KeyCode);
+            //Console.WriteLine("Up\t" + e.KeyCode.ToString());
             //e.Handled = true;
+        }
+
+        private List<string> stringToList(string stringOfKeys)
+        {
+            List<string> stringAsList = new List<string>();
+            stringOfKeys = String.Concat(stringOfKeys.Where(c => !char.IsWhiteSpace(c))); // remove spaces
+            String[] spearator = { "+" };
+            String[] keysArray = stringOfKeys.Split(spearator, 10,
+               StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string s in keysArray)
+            {
+                stringAsList.Add(s);
+            }
+            return stringAsList;
+        }
+
+        private bool isCombination(int macroNum)
+        {
+            List<string> keysHoldingAsStringList = new List<string>();
+            foreach (Keys k in keysHolding)
+            {
+                keysHoldingAsStringList.Add(k.ToString());
+            }
+            List<string> macro = null;
+            switch (macroNum)
+            {
+                case 0:
+                    macro = stringToList(form1.button4.Text);
+                    break;
+                case 1:
+                    macro = stringToList(form1.button5.Text);
+                    break;
+                case 2:
+                    macro = stringToList(form1.button6.Text);
+                    break;
+                case 3:
+                    macro = stringToList(form1.button7.Text);
+                    break;
+                default:
+                    break;
+            }
+            //Console.WriteLine(keysHoldingAsStringList.All(value => macro.Contains(value)));
+            return macro.All(value => keysHoldingAsStringList.Contains(value));
         }
 
         // The GetForegroundWindow function returns a handle to the foreground window
@@ -264,7 +313,6 @@ namespace RecordNplay
                 }
                 else if ((wParam == WM_KEYUP || wParam == WM_SYSKEYUP) && (KeyUp != null))
                 {
-                    keysHolding.Remove(kea.KeyCode);
                     gkh_KeyUp(this, kea);
                 }
                 if (kea.Handled)

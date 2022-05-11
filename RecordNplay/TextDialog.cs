@@ -176,7 +176,7 @@ namespace RecordNplay
 
             return prompt.ShowDialog() == DialogResult.OK ? new string[] { prompt.Text, textBox1.Text, textBox2.Text, textBox3.Text } : null;
         }
-        private static string readKey()
+        public static string readKey()
         {
             string returnedString = null;
             Form prompt = new Form()
@@ -191,13 +191,93 @@ namespace RecordNplay
             };
             prompt.KeyDown += (sender, args) =>
             {
-                returnedString = args.KeyCode.ToString();
+                Keys keycode = detectKeyCodeSide(args.KeyCode); // fix if it's left or right modifier
+                returnedString = keycode.ToString();
                 prompt.Close();
             };
             Label textLabel = new Label() { Left = 20, Top = 10, Text = "Press any key" };
             prompt.Controls.Add(textLabel);
             prompt.ShowDialog();
             return returnedString;
+        }
+
+        private static Keys detectKeyCodeSide(Keys keycode)
+        {
+            if (keycode == Keys.ShiftKey)
+            {
+                if (GetAsyncKeyState(Keys.LShiftKey) < 0)
+                {
+                    keycode = Keys.LShiftKey;
+                }
+                if (GetAsyncKeyState(Keys.RShiftKey) < 0)
+                {
+                    keycode = Keys.RShiftKey;
+                }
+            }
+            else if (keycode == Keys.ControlKey)
+            {
+                if (GetAsyncKeyState(Keys.LControlKey) < 0)
+                {
+                    keycode = Keys.LControlKey;
+                }
+                if (GetAsyncKeyState(Keys.RControlKey) < 0)
+                {
+                    keycode = Keys.RControlKey;
+                }
+            }
+            else if (keycode == Keys.Menu)
+            {
+                if (GetAsyncKeyState(Keys.LMenu) < 0)
+                {
+                    keycode = Keys.LMenu;
+                }
+                if (GetAsyncKeyState(Keys.RMenu) < 0)
+                {
+                    keycode = Keys.RMenu;
+                }
+            }
+            return keycode;
+        }
+
+        public static List<string> readKeys()
+        {
+            Form prompt = new Form()
+            {
+                Width = 130,
+                Height = 130,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Edit Key",
+                MaximizeBox = false,
+                MinimizeBox = false,
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            int amountOfKeys = 0;
+            List<string> keys = new List<string>();
+            List<string> highestCombination = new List<string>();
+            prompt.KeyDown += (sender, args) =>
+            {
+                amountOfKeys++;
+                Keys keycode = detectKeyCodeSide(args.KeyCode);
+                keys.Add(keycode.ToString());
+                if (keys.Count >= highestCombination.Count)
+                {
+                    highestCombination = new List<string>(keys); //copy the list
+                }
+            };
+            prompt.KeyUp += (sender, args) =>
+            {
+                amountOfKeys--;
+                Keys keycode = detectKeyCodeSide(args.KeyCode);
+                keys.Remove(keycode.ToString());
+                if (amountOfKeys <= 0) // removed all the keys and we got the highest combination
+                {
+                    prompt.Close();
+                }
+            };
+            Label textLabel = new Label() { Left = 20, Top = 10, Text = "Press any key" };
+            prompt.Controls.Add(textLabel);
+            prompt.ShowDialog();
+            return highestCombination;
         }
         private static Color GetColorAt(int x, int y)
         {
@@ -583,6 +663,7 @@ namespace RecordNplay
 
             return response;
         }
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(Keys key);
     }
-    
 }

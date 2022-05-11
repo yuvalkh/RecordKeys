@@ -67,7 +67,8 @@ namespace RecordNplay
             gkh.hook();
         }
 
-        // Function to set every ComboBox its keys (the shortcut keys that can start a macro)
+        // Function to set every ComboBox its 
+        //(the shortcut keys that can start a macro)
         private void setTriggerComboBox(ComboBox comboBox)
         {
             comboBox.Items.Add("None");
@@ -1527,6 +1528,26 @@ namespace RecordNplay
                 foreach (var childchild in EnumAllWindows(child))
                     yield return childchild;
             }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            button4.Text = string.Join(" + ", TextDialog.readKeys());
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            button5.Text = string.Join(" + ", TextDialog.readKeys());
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            button6.Text = string.Join(" + ", TextDialog.readKeys());
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            button7.Text = string.Join(" + ", TextDialog.readKeys());
         }
     }
 }
