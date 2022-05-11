@@ -41,7 +41,6 @@
             this.AddStep = new System.Windows.Forms.Button();
             this.listView1 = new System.Windows.Forms.ListView();
             this.label1 = new System.Windows.Forms.Label();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
             this.timeLabel = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
@@ -50,9 +49,7 @@
             this.currentLoop = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
             this.label9 = new System.Windows.Forms.Label();
-            this.comboBox3 = new System.Windows.Forms.ComboBox();
             this.slot1Button = new System.Windows.Forms.Button();
             this.slot2Button = new System.Windows.Forms.Button();
             this.slot3Button = new System.Windows.Forms.Button();
@@ -60,7 +57,6 @@
             this.currentWait = new System.Windows.Forms.TextBox();
             this.changeStart = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
-            this.comboBox4 = new System.Windows.Forms.ComboBox();
             this.macro1Wait = new System.Windows.Forms.TextBox();
             this.label12 = new System.Windows.Forms.Label();
             this.macro1Loop = new System.Windows.Forms.TextBox();
@@ -210,16 +206,6 @@
             this.label1.TabIndex = 17;
             this.label1.Text = "Trigger1:";
             // 
-            // comboBox1
-            // 
-            this.comboBox1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(304, 499);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(108, 24);
-            this.comboBox1.TabIndex = 18;
-            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
-            // 
             // label2
             // 
             this.label2.AutoSize = true;
@@ -294,16 +280,6 @@
             this.label8.TabIndex = 25;
             this.label8.Text = "Trigger2:";
             // 
-            // comboBox2
-            // 
-            this.comboBox2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(480, 499);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(108, 24);
-            this.comboBox2.TabIndex = 26;
-            this.comboBox2.SelectedIndexChanged += new System.EventHandler(this.comboBox2_SelectedIndexChanged);
-            // 
             // label9
             // 
             this.label9.AutoSize = true;
@@ -313,16 +289,6 @@
             this.label9.Size = new System.Drawing.Size(66, 17);
             this.label9.TabIndex = 27;
             this.label9.Text = "Trigger3:";
-            // 
-            // comboBox3
-            // 
-            this.comboBox3.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBox3.FormattingEnabled = true;
-            this.comboBox3.Location = new System.Drawing.Point(666, 499);
-            this.comboBox3.Name = "comboBox3";
-            this.comboBox3.Size = new System.Drawing.Size(108, 24);
-            this.comboBox3.TabIndex = 28;
-            this.comboBox3.SelectedIndexChanged += new System.EventHandler(this.comboBox3_SelectedIndexChanged);
             // 
             // slot1Button
             // 
@@ -392,16 +358,6 @@
             this.label11.Size = new System.Drawing.Size(59, 34);
             this.label11.TabIndex = 35;
             this.label11.Text = "Current \r\nTrigger:";
-            // 
-            // comboBox4
-            // 
-            this.comboBox4.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBox4.FormattingEnabled = true;
-            this.comboBox4.Location = new System.Drawing.Point(36, 499);
-            this.comboBox4.Name = "comboBox4";
-            this.comboBox4.Size = new System.Drawing.Size(108, 24);
-            this.comboBox4.TabIndex = 36;
-            this.comboBox4.SelectedIndexChanged += new System.EventHandler(this.comboBox4_SelectedIndexChanged);
             // 
             // macro1Wait
             // 
@@ -654,7 +610,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1159, 562);
+            this.ClientSize = new System.Drawing.Size(1159, 483);
             this.Controls.Add(this.button7);
             this.Controls.Add(this.button6);
             this.Controls.Add(this.button5);
@@ -681,7 +637,6 @@
             this.Controls.Add(this.label12);
             this.Controls.Add(this.macro1Loop);
             this.Controls.Add(this.label13);
-            this.Controls.Add(this.comboBox4);
             this.Controls.Add(this.label11);
             this.Controls.Add(this.changeStart);
             this.Controls.Add(this.currentWait);
@@ -689,9 +644,7 @@
             this.Controls.Add(this.slot3Button);
             this.Controls.Add(this.slot2Button);
             this.Controls.Add(this.slot1Button);
-            this.Controls.Add(this.comboBox3);
             this.Controls.Add(this.label9);
-            this.Controls.Add(this.comboBox2);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.currentLoop);
@@ -699,7 +652,6 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.timeLabel);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.listView1);
             this.Controls.Add(this.AddStep);
@@ -734,7 +686,6 @@
         private System.Windows.Forms.Button AddStep;
         private System.Windows.Forms.ListView listView1;
         private System.Windows.Forms.Label label1;
-        public System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label timeLabel;
         private System.Windows.Forms.Timer timer1;
@@ -743,9 +694,7 @@
         public System.Windows.Forms.TextBox currentLoop;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.Label label8;
-        public System.Windows.Forms.ComboBox comboBox2;
         private System.Windows.Forms.Label label9;
-        public System.Windows.Forms.ComboBox comboBox3;
         private System.Windows.Forms.Button slot1Button;
         private System.Windows.Forms.Button slot2Button;
         private System.Windows.Forms.Button slot3Button;
@@ -753,7 +702,6 @@
         public System.Windows.Forms.TextBox currentWait;
         private System.Windows.Forms.Button changeStart;
         private System.Windows.Forms.Label label11;
-        public System.Windows.Forms.ComboBox comboBox4;
         public System.Windows.Forms.TextBox macro1Wait;
         private System.Windows.Forms.Label label12;
         public System.Windows.Forms.TextBox macro1Loop;

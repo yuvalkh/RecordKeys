@@ -48,7 +48,6 @@ namespace RecordNplay
         public Form1()
         {
             InitializeComponent();
-            comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
             gkh = new globalKeyboardHook(this);
             BackColor = Color.LightBlue;
             listView1.View = View.Details;
@@ -60,48 +59,9 @@ namespace RecordNplay
             {
                 listBox1.Items.Add(file.Name.Substring(0, file.Name.Length - 5));
             }
-            setTriggerComboBox(comboBox1);
-            setTriggerComboBox(comboBox2);
-            setTriggerComboBox(comboBox3);
-            setTriggerComboBox(comboBox4);
             gkh.hook();
         }
 
-        // Function to set every ComboBox its 
-        //(the shortcut keys that can start a macro)
-        private void setTriggerComboBox(ComboBox comboBox)
-        {
-            comboBox.Items.Add("None");
-            comboBox.Items.Add("LShiftKey");
-            comboBox.Items.Add("RShiftKey");
-            comboBox.Items.Add("RControlKey");
-            comboBox.Items.Add("LMenu");
-            comboBox.Items.Add("RMenu");
-            comboBox.Items.Add("LControlKey");
-            comboBox.Items.Add("Capital");
-            comboBox.Items.Add("Tab");
-            comboBox.Items.Add("NumLock");
-            comboBox.Items.Add("Insert");
-            comboBox.Items.Add("Delete");
-            comboBox.Items.Add("Home");
-            comboBox.Items.Add("End");
-            for (char c = 'A'; c <= 'Z'; c++)
-            {
-                comboBox.Items.Add(c);
-            }
-            for (int i = 1; i <= 12; i++)
-            {
-                comboBox.Items.Add("F" + i);
-            }
-            for (int i = 0; i <= 9; i++)
-            {
-                comboBox.Items.Add("NumPad" + i);
-            }
-            for (int i = 0; i <= 9; i++)
-            {
-                comboBox.Items.Add("D" + i);
-            }
-        }
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -291,7 +251,7 @@ namespace RecordNplay
                         }
                         
                         bool isWaitEvent = false;
-                        if (macroSteps[stepNumber] is WaitColorEvent) // if we need to wait, we stop our stopwatch
+                        if (macroSteps[stepNumber] is WaitColorEvent || macroSteps[stepNumber] is WaitForImageEvent) // if we need to wait, we stop our stopwatch
                         {
                             isWaitEvent = true;
                             sw.Stop();
@@ -863,6 +823,58 @@ namespace RecordNplay
                                 }
                             }
                             break;
+                        case WaitForImageEvent infoAsWaitImage:
+                            //"Image", Threshold, Image Name, Time, Image , Checkbox, X, Y
+                            newValuesArray = TextDialog.showChoosePic(infoAsWaitImage.threshold.ToString(),infoAsWaitImage.startTime.ToString(), infoAsWaitImage.imgName,infoAsWaitImage.img,infoAsWaitImage.click.ToString(), infoAsWaitImage.x.ToString(), infoAsWaitImage.y.ToString());
+                            if (newValuesArray != null && float.TryParse(newValuesArray[1],out float givenThreshold) && 0 < givenThreshold && givenThreshold < 1 && newValuesArray[2].Length > 0 && newValuesArray[3].All(x => char.IsDigit(x)) && newValuesArray[4] != null)
+                            {
+                                bool changed = false;
+                                if (long.Parse(newValuesArray[3]) != infoAsWaitImage.startTime)
+                                {
+                                    changed = true;
+                                    newStartTime = long.Parse(newValuesArray[3]);
+                                    initialStartTime = infoAsWaitImage.startTime;
+                                    infoAsWaitImage.startTime = newStartTime;
+                                    int newIndexToInsert = findIndexOfInsert(newStartTime);
+                                    if (newStartTime > initialStartTime)
+                                    {
+                                        handledMacro.Insert(newIndexToInsert, infoAsWaitImage);
+                                        handledMacro.RemoveAt(currentIndex);
+                                    }
+                                    else
+                                    {
+                                        handledMacro.RemoveAt(currentIndex);
+                                        handledMacro.Insert(newIndexToInsert, infoAsWaitImage);
+                                    }
+                                }
+                                if (float.Parse(newValuesArray[1]) != infoAsWaitImage.threshold)
+                                {
+                                    changed = true;
+                                    infoAsWaitImage.threshold = float.Parse(newValuesArray[1]);
+                                }
+                                if (newValuesArray[2] != infoAsWaitImage.imgName)
+                                {
+                                    changed = true;
+                                    infoAsWaitImage.imgName = newValuesArray[2];
+                                }
+                                if (newValuesArray[4] != infoAsWaitImage.img)
+                                {
+                                    changed = true;
+                                    infoAsWaitImage.img = newValuesArray[4];
+                                }
+                                if (changed) // only if we changed something we update the macro steps
+                                {
+                                    showMacroSteps(handledMacro);
+                                }
+                            }
+                            else
+                            {
+                                if (newValuesArray != null)
+                                {
+                                    MessageBox.Show("Problem with the data entered");
+                                }
+                            }
+                            break;
                         case LoopEvent infoAsLoopEvent:
                             newValuesArray = TextDialog.ShowLoopEdit(infoAsLoopEvent.startTime.ToString(), infoAsLoopEvent.numberOfLoops.ToString(), infoAsLoopEvent.numberOfEvents.ToString());
                             if (newValuesArray != null && newValuesArray[1].All(x => char.IsDigit(x)) && newValuesArray[2].All(x => char.IsDigit(x)) && newValuesArray[3].All(x => char.IsDigit(x)))
@@ -1126,13 +1138,38 @@ namespace RecordNplay
                         listView1.Items.Insert(insertIndex, handledMacro[insertIndex].ToString());
                         showMacroSteps(handledMacro);
                         break;
+                    case "Image":
+                        if (info[4] == null)
+                        {
+                            MessageBox.Show("No specified Image");
+                            break;
+                        }
+                        float threshold = float.Parse(info[1]);
+                        string imgName = info[2];                
+                        startTime = int.Parse(info[3]);
+                        string img = info[4];
+                        //img = TextDialog.ByteStringToBitmap(info[3]);
+                        insertIndex = findIndexOfInsert(startTime);
+                        if (info[5] == "false")
+                        {
+                            handledMacro.Insert(insertIndex, new WaitForImageEvent(startTime, img, threshold, imgName));
+                        }
+                        else
+                        {
+                            handledMacro.Insert(insertIndex, new WaitForImageEvent(startTime, img, threshold, imgName,true,int.Parse(info[6]),int.Parse(info[7])));
+                        }
+                        
+                        
+                        showMacroSteps(handledMacro);
+                        break;
                     default: // if exit without choosing anything
                         break;
                 }
             }
-            catch (Exception)
+            catch (Exception ee)
             {
                 MessageBox.Show("There's a problem with the data entered.");
+                Console.WriteLine(ee);
             }
         }
 
@@ -1236,53 +1273,6 @@ namespace RecordNplay
             {
                 slot3 = null;
                 slot3Button.Text = "Load Macro to slot 3";
-            }
-        }
-
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!(comboBox1.SelectedItem.ToString().Equals("None")))
-            {
-                if ((comboBox4.SelectedItem != null && comboBox1.SelectedItem.ToString().Equals(comboBox4.SelectedItem.ToString())) || (comboBox2.SelectedItem != null && comboBox1.SelectedItem.ToString().Equals(comboBox2.SelectedItem.ToString())) || (comboBox3.SelectedItem != null && comboBox1.SelectedItem.ToString().Equals(comboBox3.SelectedItem.ToString())))
-                {
-                    MessageBox.Show("Trigger can't be the same as other macro's trigger");
-                    comboBox1.Text = "None";
-                }
-            }
-        }
-
-        private void comboBox2_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!(comboBox2.SelectedItem.ToString().Equals("None")))
-            {
-                if ((comboBox4.SelectedItem != null && comboBox2.SelectedItem.ToString().Equals(comboBox4.SelectedItem.ToString())) || (comboBox1.SelectedItem != null && comboBox2.SelectedItem.ToString().Equals(comboBox1.SelectedItem.ToString())) || (comboBox3.SelectedItem != null && comboBox2.SelectedItem.ToString().Equals(comboBox3.SelectedItem.ToString())))
-                {
-                    MessageBox.Show("Trigger can't be the same as other macro's trigger");
-                    comboBox2.Text = "None";
-                }
-            }
-        }
-
-        private void comboBox3_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!(comboBox3.SelectedItem.ToString().Equals("None")))
-            {
-                if ((comboBox4.SelectedItem != null && comboBox3.SelectedItem.ToString().Equals(comboBox4.SelectedItem.ToString())) || (comboBox1.SelectedItem != null && comboBox3.SelectedItem.ToString().Equals(comboBox1.SelectedItem.ToString())) || (comboBox2.SelectedItem != null && comboBox3.SelectedItem.ToString().Equals(comboBox2.SelectedItem.ToString())))
-                {
-                    MessageBox.Show("Trigger can't be the same as other macro's trigger");
-                    comboBox3.Text = "None";
-                }
-            }
-        }
-        private void comboBox4_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!(comboBox4.SelectedItem.ToString().Equals("None")))
-            {
-                if ((comboBox1.SelectedItem != null && comboBox4.SelectedItem.ToString().Equals(comboBox1.SelectedItem.ToString())) || (comboBox2.SelectedItem != null && comboBox4.SelectedItem.ToString().Equals(comboBox2.SelectedItem.ToString())) || (comboBox3.SelectedItem != null && comboBox4.SelectedItem.ToString().Equals(comboBox3.SelectedItem.ToString())))
-                {
-                    MessageBox.Show("Trigger can't be the same as other macro's trigger");
-                    comboBox3.Text = "None";
-                }
             }
         }
 

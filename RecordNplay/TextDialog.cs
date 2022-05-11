@@ -5,6 +5,7 @@ using System.Management;
 using System.Windows.Forms;
 using System.Dynamic;
 using System.Drawing;
+using System.IO;
 
 namespace RecordNplay
 {
@@ -200,7 +201,6 @@ namespace RecordNplay
             prompt.ShowDialog();
             return returnedString;
         }
-
         private static Keys detectKeyCodeSide(Keys keycode)
         {
             if (keycode == Keys.ShiftKey)
@@ -238,7 +238,6 @@ namespace RecordNplay
             }
             return keycode;
         }
-
         public static List<string> readKeys()
         {
             Form prompt = new Form()
@@ -440,12 +439,129 @@ namespace RecordNplay
             prompt.ShowDialog();
             return returnedString;
         }
+        private static Bitmap cropFromScreen()
+        {
+            Image img = SnippingForm.Snip();
+            if (img != null)
+            {
+                Console.WriteLine("I found a picture !");
+                return new Bitmap(img);
+            }
+            return null;
+        }
+        public static string BitmapToByteString(Bitmap image)
+        {
+            MemoryStream ms = new MemoryStream();
+            image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            byte[] byteArray = ms.ToArray();
+            return Convert.ToBase64String(byteArray, 0, byteArray.Length, Base64FormattingOptions.InsertLineBreaks);
+        }
+
+        public static Bitmap ByteStringToBitmap(string byteArrayString)
+        {
+            byte[] byteArray = Convert.FromBase64String(byteArrayString);
+            MemoryStream ms = new MemoryStream(byteArray);
+            Image returnImage = Image.FromStream(ms);
+            return new Bitmap(returnImage);
+        }
+        public static string[] showChoosePic(string threshold, string startTime, string imgName, string image, string click, string x, string y)
+        {
+            Form prompt = new Form()
+            {
+                Width = 500,
+                Height = 300,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Image",
+                MaximizeBox = false,
+                StartPosition = FormStartPosition.CenterScreen
+            }; 
+            Label textLabel1 = new Label() { Left = 20, Top = 10, Text = "Threshold:" };
+            TextBox textBox1 = new TextBox() { Left = 100, Top = 10, Width = 100 };
+            Label textLabel2 = new Label() { Left = 20, Top = 40, Text = "Image Name:" };
+            TextBox textBox2 = new TextBox() { Left = 100, Top = 40, Width = 100 };
+            Label textLabel3 = new Label() { Left = 20, Top = 70, Text = "Time:" };
+            TextBox textBox3 = new TextBox() { Left = 100, Top = 70, Width = 100 };
+            Label textLabel4 = new Label() { Left = 20, Top = 100, Text = "Click?" };
+            CheckBox clickCheckbox = new CheckBox() { Left = 100, Top = 100 };
+            Label xTextLabel = new Label() { Left = 20, Top = 130, Text = "X:"};
+            TextBox xTextBox = new TextBox() { Left = 100, Top = 130, Width = 100 };
+            Label yTextLabel = new Label() { Left = 20, Top = 160, Text = "Y:" };
+            TextBox yTextBox = new TextBox() { Left = 100, Top = 160, Width = 100 };
+            
+             Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 130, DialogResult = DialogResult.OK };
+            clickCheckbox.CheckedChanged += (sender, args) =>
+            {
+                if (clickCheckbox.Checked)
+                {
+                    prompt.Controls.Add(xTextBox);
+                    prompt.Controls.Add(xTextLabel);
+                    prompt.Controls.Add(yTextBox);
+                    prompt.Controls.Add(yTextLabel);
+                    confirmation.Top += 60;
+                }
+                else
+                {
+                    prompt.Controls.Remove(xTextBox);
+                    prompt.Controls.Remove(xTextLabel);
+                    prompt.Controls.Remove(yTextBox);
+                    prompt.Controls.Remove(yTextLabel);
+                    confirmation.Top -= 60;
+                }
+            };
+            if (click == "True")
+            {
+                prompt.Controls.Add(xTextBox);
+                prompt.Controls.Add(xTextLabel);
+                prompt.Controls.Add(yTextBox);
+                prompt.Controls.Add(yTextLabel);
+                clickCheckbox.Checked = true;
+            }
+            
+            Button changeKey = new Button() { Text = "Take Pic", Left = 220, Width = 90, Top = 10 };
+            PictureBox cropped = new PictureBox()
+            {
+                Size = new Size(100, 100),
+                Left = 220,
+                Top = 40,
+                SizeMode = PictureBoxSizeMode.StretchImage
+            };
+            Label widthTextLabel = new Label() { Left = 220, Top = 170, Text = "Width:" };
+            Label heightTextLabel = new Label() { Left = 220, Top = 200, Text = "Height:" };
+            changeKey.Click += (sender, args) => { cropped.Image = cropFromScreen(); widthTextLabel.Text = "Width: " + cropped.Image.Width.ToString(); heightTextLabel.Text = "Height: " + cropped.Image.Height.ToString();};
+            textBox1.Text = threshold;
+            textBox2.Text = imgName;
+            textBox3.Text = startTime;
+            xTextBox.Text = x;
+            yTextBox.Text = y;
+            if (image != null) // we only show the picture if it's not null
+            {
+                cropped.Image = ByteStringToBitmap(image);
+            }
+            confirmation.Click += (sender, e) => { prompt.Close(); };
+            prompt.Controls.Add(clickCheckbox);
+            prompt.Controls.Add(textBox1);
+            prompt.Controls.Add(textBox2);
+            prompt.Controls.Add(textBox3);
+            prompt.Controls.Add(confirmation);
+            prompt.Controls.Add(textLabel1);
+            prompt.Controls.Add(textLabel2);
+            prompt.Controls.Add(textLabel3);
+            prompt.Controls.Add(textLabel4);
+            prompt.Controls.Add(changeKey);
+            prompt.Controls.Add(widthTextLabel);
+            prompt.Controls.Add(heightTextLabel);
+            prompt.Controls.Add(cropped);
+            prompt.AcceptButton = confirmation;
+
+            return prompt.ShowDialog() == DialogResult.OK ? new string[] { "Image", textBox1.Text, textBox2.Text, textBox3.Text, cropped.Image!= null ? BitmapToByteString(new Bitmap(cropped.Image)) : null , clickCheckbox.Checked.ToString(), xTextBox.Text, yTextBox.Text } : null;
+        }
+
         private static string showChooseEvent()
         {
             string returnedString = null;
             Form prompt = new Form()
             {
-                Width = 280,
+                Width = 400,
                 Height = 100,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = "Choose Event",
@@ -456,6 +572,7 @@ namespace RecordNplay
             Button KeyButton = new Button() { Left = 140, Top = 10, Text = "Key Event", Width = 100};
             Button WaitColorButton = new Button() { Left = 20, Top = 35, Text = "Wait Color Event", Width = 100 };
             Button LoopButton = new Button() { Left = 140, Top = 35, Text = "Loop Event", Width = 100 };
+            Button ImageButton = new Button() { Left = 260, Top = 35, Text = "Wait Image Event", Width = 100 };
             MouseButton.Click += (sender, args) =>
             {
                 returnedString = "Mouse";
@@ -476,10 +593,16 @@ namespace RecordNplay
                 returnedString = "Loop";
                 prompt.Close();
             };
+            ImageButton.Click += (sender, args) =>
+            {
+                returnedString = "Image";
+                prompt.Close();
+            };
             prompt.Controls.Add(MouseButton);
             prompt.Controls.Add(KeyButton);
             prompt.Controls.Add(WaitColorButton);
             prompt.Controls.Add(LoopButton);
+            prompt.Controls.Add(ImageButton);
             prompt.ShowDialog();
             return returnedString;
         }
@@ -504,6 +627,8 @@ namespace RecordNplay
                     return ShowWaitColorEdit(0, 0, 0, "", "", "", "false");
                 case "Loop":
                     return ShowLoopEdit("0", "1", "1");
+                case "Image":
+                    return showChoosePic("0", "0", "", null,"false","-1","-1");
                 default: // if exit without choosing anything
                     return null;
             }
