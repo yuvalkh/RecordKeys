@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Diagnostics;
+
 
 namespace RecordNplay
 {
@@ -47,19 +49,19 @@ namespace RecordNplay
         }
         public override void activate()
         {
-            Bitmap imgAsBitmap = TextDialog.ByteStringToBitmap(img);
             while (Form1.running) // check if still need to wait (user didn't press Escape to stop the macro)
             {
+                Bitmap imgAsBitmap = TextDialog.ByteStringToBitmap(img);
                 var rc = Screen.PrimaryScreen.Bounds;
                 int calScreenWidth = rc.Width;
                 int calScreenHeight = rc.Height;
-                //get a scrennshot of the pc
                 Bitmap bm = new Bitmap(calScreenWidth, calScreenHeight);
                 Graphics g = Graphics.FromImage(bm);
+                Mat button_img = imgAsBitmap.ToMat();
+                //get a scrennshot of the pc
                 g.CopyFromScreen(0, 0, 0, 0, bm.Size);
 
                 Mat game_img = bm.ToMat();
-                Mat button_img = imgAsBitmap.ToMat();
                 Mat result = new Mat();
                 double minVal = 0;
                 double maxVal = 0;
@@ -71,26 +73,21 @@ namespace RecordNplay
 
                 if (maxVal > threshold)
                 {
-                    Console.WriteLine("I found it at: " + maxLoc);
                     // before we exit we check if we need to click it
                     if (click)
                     {
                         //when we found, we click on the image (middle of the image)
-                        MouseClicker.pressLeftMouse(maxLoc.X + imgAsBitmap.Width / 2, maxLoc.Y + imgAsBitmap.Height / 2);
-                        MouseClicker.leaveLeftMouse(maxLoc.X + imgAsBitmap.Width / 2, maxLoc.Y + imgAsBitmap.Height / 2);
+                        MouseClicker.pressLeftMouse(maxLoc.X + x, maxLoc.Y + y);
+                        MouseClicker.leaveLeftMouse(maxLoc.X + x, maxLoc.Y + y);
                     }
                     break;
-                }
-                else
-                {
-                    Console.WriteLine("Didn't found that");
                 }
                 game_img.Dispose();
                 button_img.Dispose();
                 result.Dispose();
                 bm.Dispose();
                 g.Dispose();
-                new ManualResetEvent(false).WaitOne(100); // do sleep for 1 millisecond to not waste CPU (busy waiting)
+                new ManualResetEvent(false).WaitOne(1); // do sleep for 1 millisecond to not waste CPU (busy waiting)
             }
         }
 

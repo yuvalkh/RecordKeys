@@ -11,6 +11,9 @@ namespace RecordNplay
 {
     public static class TextDialog
     {
+        public static bool isInScreenshot = false;
+        public static bool takingScreenshot = false;
+
         public static string ShowDialog(string text, string caption)
         {
             Form prompt = new Form()
@@ -444,7 +447,6 @@ namespace RecordNplay
             Image img = SnippingForm.Snip();
             if (img != null)
             {
-                Console.WriteLine("I found a picture !");
                 return new Bitmap(img);
             }
             return null;
@@ -464,9 +466,13 @@ namespace RecordNplay
             Image returnImage = Image.FromStream(ms);
             return new Bitmap(returnImage);
         }
+        private static PictureBox cropped;
+        private static Label widthTextLabel;
+        private static Label heightTextLabel;
+        private static Form choosePicPrompt;
         public static string[] showChoosePic(string threshold, string startTime, string imgName, string image, string click, string x, string y)
         {
-            Form prompt = new Form()
+            choosePicPrompt = new Form()
             {
                 Width = 500,
                 Height = 300,
@@ -487,47 +493,50 @@ namespace RecordNplay
             TextBox xTextBox = new TextBox() { Left = 100, Top = 130, Width = 100 };
             Label yTextLabel = new Label() { Left = 20, Top = 160, Text = "Y:" };
             TextBox yTextBox = new TextBox() { Left = 100, Top = 160, Width = 100 };
-            
-             Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 130, DialogResult = DialogResult.OK };
+            Label textLabel5 = new Label() { Left = 310, Top = 10, Text = "You can press PrintScreen to take pic" };
+            Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 130, DialogResult = DialogResult.OK };
             clickCheckbox.CheckedChanged += (sender, args) =>
             {
                 if (clickCheckbox.Checked)
                 {
-                    prompt.Controls.Add(xTextBox);
-                    prompt.Controls.Add(xTextLabel);
-                    prompt.Controls.Add(yTextBox);
-                    prompt.Controls.Add(yTextLabel);
+                    choosePicPrompt.Controls.Add(xTextBox);
+                    choosePicPrompt.Controls.Add(xTextLabel);
+                    choosePicPrompt.Controls.Add(yTextBox);
+                    choosePicPrompt.Controls.Add(yTextLabel);
                     confirmation.Top += 60;
                 }
                 else
                 {
-                    prompt.Controls.Remove(xTextBox);
-                    prompt.Controls.Remove(xTextLabel);
-                    prompt.Controls.Remove(yTextBox);
-                    prompt.Controls.Remove(yTextLabel);
+                    choosePicPrompt.Controls.Remove(xTextBox);
+                    choosePicPrompt.Controls.Remove(xTextLabel);
+                    choosePicPrompt.Controls.Remove(yTextBox);
+                    choosePicPrompt.Controls.Remove(yTextLabel);
                     confirmation.Top -= 60;
                 }
             };
             if (click == "True")
             {
-                prompt.Controls.Add(xTextBox);
-                prompt.Controls.Add(xTextLabel);
-                prompt.Controls.Add(yTextBox);
-                prompt.Controls.Add(yTextLabel);
+                choosePicPrompt.Controls.Add(xTextBox);
+                choosePicPrompt.Controls.Add(xTextLabel);
+                choosePicPrompt.Controls.Add(yTextBox);
+                choosePicPrompt.Controls.Add(yTextLabel);
                 clickCheckbox.Checked = true;
             }
             
             Button changeKey = new Button() { Text = "Take Pic", Left = 220, Width = 90, Top = 10 };
-            PictureBox cropped = new PictureBox()
+            cropped = new PictureBox()
             {
                 Size = new Size(100, 100),
                 Left = 220,
                 Top = 40,
                 SizeMode = PictureBoxSizeMode.StretchImage
             };
-            Label widthTextLabel = new Label() { Left = 220, Top = 170, Text = "Width:" };
-            Label heightTextLabel = new Label() { Left = 220, Top = 200, Text = "Height:" };
-            changeKey.Click += (sender, args) => { cropped.Image = cropFromScreen(); widthTextLabel.Text = "Width: " + cropped.Image.Width.ToString(); heightTextLabel.Text = "Height: " + cropped.Image.Height.ToString();};
+            widthTextLabel = new Label() { Left = 220, Top = 170, Text = "Width:" };
+            heightTextLabel = new Label() { Left = 220, Top = 200, Text = "Height:" };
+            changeKey.Click += (sender, args) => 
+            {
+                takePic();
+            };
             textBox1.Text = threshold;
             textBox2.Text = imgName;
             textBox3.Text = startTime;
@@ -537,25 +546,40 @@ namespace RecordNplay
             {
                 cropped.Image = ByteStringToBitmap(image);
             }
-            confirmation.Click += (sender, e) => { prompt.Close(); };
-            prompt.Controls.Add(clickCheckbox);
-            prompt.Controls.Add(textBox1);
-            prompt.Controls.Add(textBox2);
-            prompt.Controls.Add(textBox3);
-            prompt.Controls.Add(confirmation);
-            prompt.Controls.Add(textLabel1);
-            prompt.Controls.Add(textLabel2);
-            prompt.Controls.Add(textLabel3);
-            prompt.Controls.Add(textLabel4);
-            prompt.Controls.Add(changeKey);
-            prompt.Controls.Add(widthTextLabel);
-            prompt.Controls.Add(heightTextLabel);
-            prompt.Controls.Add(cropped);
-            prompt.AcceptButton = confirmation;
-
-            return prompt.ShowDialog() == DialogResult.OK ? new string[] { "Image", textBox1.Text, textBox2.Text, textBox3.Text, cropped.Image!= null ? BitmapToByteString(new Bitmap(cropped.Image)) : null , clickCheckbox.Checked.ToString(), xTextBox.Text, yTextBox.Text } : null;
+            confirmation.Click += (sender, e) => { choosePicPrompt.Close(); };
+            choosePicPrompt.Controls.Add(clickCheckbox);
+            choosePicPrompt.Controls.Add(textBox1);
+            choosePicPrompt.Controls.Add(textBox2);
+            choosePicPrompt.Controls.Add(textBox3);
+            choosePicPrompt.Controls.Add(confirmation);
+            choosePicPrompt.Controls.Add(textLabel1);
+            choosePicPrompt.Controls.Add(textLabel2);
+            choosePicPrompt.Controls.Add(textLabel3);
+            choosePicPrompt.Controls.Add(textLabel4);
+            choosePicPrompt.Controls.Add(textLabel5);
+            choosePicPrompt.Controls.Add(changeKey);
+            choosePicPrompt.Controls.Add(widthTextLabel);
+            choosePicPrompt.Controls.Add(heightTextLabel);
+            choosePicPrompt.Controls.Add(cropped);
+            choosePicPrompt.AcceptButton = confirmation;
+            isInScreenshot = true;
+            string[] returnString = choosePicPrompt.ShowDialog() == DialogResult.OK ? new string[] { "Image", textBox1.Text, textBox2.Text, textBox3.Text, cropped.Image != null ? BitmapToByteString(new Bitmap(cropped.Image)) : null, clickCheckbox.Checked.ToString(), xTextBox.Text, yTextBox.Text } : null;
+            isInScreenshot = false;
+            return returnString;
         }
-
+        public static void takePic()
+        {
+            takingScreenshot = true;
+            Bitmap img = cropFromScreen();
+            if (img != null)
+            {
+                cropped.Image = img;
+                widthTextLabel.Text = "Width: " + cropped.Image.Width.ToString();
+                heightTextLabel.Text = "Height: " + cropped.Image.Height.ToString();
+            }
+            choosePicPrompt.BringToFront();
+            takingScreenshot = false;
+        }
         private static string showChooseEvent()
         {
             string returnedString = null;
@@ -628,7 +652,7 @@ namespace RecordNplay
                 case "Loop":
                     return ShowLoopEdit("0", "1", "1");
                 case "Image":
-                    return showChoosePic("0", "0", "", null,"false","-1","-1");
+                    return showChoosePic("0.8", "0", "", null,"false","-1","-1");
                 default: // if exit without choosing anything
                     return null;
             }

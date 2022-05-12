@@ -67,41 +67,48 @@ namespace RecordNplay
                 }
                 else//To start the macro
                 {
-                    string currentProgram = GetFocusedProcessName();
-                    if (!currentProgram.Equals("RecordNplay"))
+                    // check if we need to handle the print screen in taking image
+                    if (e.KeyCode == Keys.PrintScreen && TextDialog.isInScreenshot && !TextDialog.takingScreenshot)
                     {
-                        Console.WriteLine("Combination: " + isCombination(0));
-                        Console.WriteLine("Slot: " + Form1.slot1);
-                        if (isCombination(0) && Form1.writingChars != null)
-                        {
-                            new Thread(() =>
-                            {
-                                form1.runMacro(Form1.writingChars, form1.currentLoop.Text, form1.currentWait.Text);
-                            }).Start();
-                        }
-                        if (isCombination(1) && Form1.slot1 != null)
-                        {
-                            new Thread(() =>
-                            {
-                                form1.runMacro(Form1.slot1, form1.macro1Loop.Text, form1.macro1Wait.Text);
-                            }).Start();
-                        }
-                        if (isCombination(2) && Form1.slot2 != null)
-                        {
-                            new Thread(() =>
-                            {
-                                form1.runMacro(Form1.slot2, form1.macro2Loop.Text, form1.randomMeanTextbox.Text);
-                            }).Start();
-                        }
-                        if (isCombination(3) && Form1.slot3 != null)
-                        {
-                            new Thread(() =>
-                            {
-                                form1.runMacro(Form1.slot3, form1.macro3Loop.Text, form1.macro3Wait.Text);
-                            }).Start();
-                        }
-                        
+                        TextDialog.takePic();
                     }
+                    else
+                    {
+                        string currentProgram = GetFocusedProcessName();
+                        if (!currentProgram.Equals("RecordNplay"))
+                        {
+                            if (isCombination(0) && Form1.writingChars != null)
+                            {
+                                new Thread(() =>
+                                {
+                                    form1.runMacro(Form1.writingChars, form1.currentLoop.Text, form1.currentWait.Text);
+                                }).Start();
+                            }
+                            else if (isCombination(1) && Form1.slot1 != null)
+                            {
+                                new Thread(() =>
+                                {
+                                    form1.runMacro(Form1.slot1, form1.macro1Loop.Text, form1.macro1Wait.Text);
+                                }).Start();
+                            }
+                            else if (isCombination(2) && Form1.slot2 != null)
+                            {
+                                new Thread(() =>
+                                {
+                                    form1.runMacro(Form1.slot2, form1.macro2Loop.Text, form1.randomMeanTextbox.Text);
+                                }).Start();
+                            }
+                            else if (isCombination(3) && Form1.slot3 != null)
+                            {
+                                new Thread(() =>
+                                {
+                                    form1.runMacro(Form1.slot3, form1.macro3Loop.Text, form1.macro3Wait.Text);
+                                }).Start();
+                            }
+
+                        }
+                    }
+                    
                 }
             }
             else

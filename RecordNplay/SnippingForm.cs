@@ -21,6 +21,7 @@ namespace RecordNplay
                     gr.CopyFromScreen(0, 0, 0, 0, bmp.Size);
                 using (var snipper = new SnippingForm(bmp))
                 {
+                    snipper.BringToFront();
                     if (snipper.ShowDialog() == DialogResult.OK)
                     {
                         return snipper.Image;
@@ -38,6 +39,7 @@ namespace RecordNplay
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
             this.DoubleBuffered = true;
+            this.TopMost = true;
         }
         public Image Image { get; set; }
 
