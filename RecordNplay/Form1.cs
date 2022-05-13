@@ -68,14 +68,47 @@ namespace RecordNplay
             //currently doing nothing, but probably will add some stuff here
         }
 
+        public static List<MacroEvent> previousMacro;
+        public static bool append = false;
+        public static int appendIndex = -1;
+        public static long appendTime = -1;
+
         private void button1_Click(object sender, EventArgs e)
         {
             if (!recording)
             {
-                recording = true;
+                if (writingChars != null && writingChars.Count > 0) // There's already a macro
+                {
+                    string result = TextDialog.showExistingMacroListen();
+                    if (result != null)
+                    {
+                        if (result.Equals("Append"))
+                        {
+                            result = TextDialog.showAppendListen();
+                            if (result != null && result.All(x => char.IsDigit(x)))
+                            {
+                                long insertTime = long.Parse(result);
+                                int insertIndex = findIndexOfInsert(insertTime);
+                                previousMacro = writingChars; // we save the previous macro and then we will append to it the new 1
+                                append = true;
+                                appendIndex = insertIndex; // save as well the index we want to append from there               
+                                appendTime = insertTime;
+                            }
+                            else
+                            {
+                                MessageBox.Show("Problem with the time entered (not all digits)");
+                                return;
+                            }
+                        }
+                        else if (result.Equals("Overide"))
+                        {
+                            writingChars = new List<MacroEvent>();
+                        }
+                    }
+                }
                 writingChars = new List<MacroEvent>();
-                sw.Reset();
-                sw.Start();
+                sw.Restart();
+                recording = true;
                 MouseHook.Start();
                 handled = "writingChars";
             }
@@ -86,8 +119,40 @@ namespace RecordNplay
             if (recording)
             {
                 recording = false;
-                sw.Reset();
                 MouseHook.stop();
+                if (append) // we need to add this macro list with the previous one
+                {
+                    long startMacroTime = writingChars.First().startTime;
+                    if (startMacroTime > appendTime) // it means we need to lower the time
+                    {
+                        long decrease = startMacroTime - appendTime;
+                        foreach (MacroEvent macroEvent in writingChars)
+                        {
+                            macroEvent.startTime -= decrease; // we subtract the time
+                        }
+                    }
+                    else
+                    {
+                        long increase = appendTime - startMacroTime;
+                        foreach (MacroEvent macroEvent in writingChars)
+                        {
+                            macroEvent.startTime -= increase; // we add the time
+                        }
+                    }
+                    
+                    long newMacroDuration = writingChars.Last().startTime;
+                    for (int i = appendIndex + 1; i < previousMacro.Count; i++)
+                    {
+                        previousMacro[i].startTime += newMacroDuration;
+                    }
+                    previousMacro.InsertRange(appendIndex, writingChars);
+                    writingChars = previousMacro;
+                    previousMacro = null;
+                    append = false;
+                    appendIndex = -1;
+                }
+                
+                sw.Reset();
                 showMacroSteps(writingChars);
                 handled = "writingChars";
             }
@@ -769,8 +834,8 @@ namespace RecordNplay
                                     changed = true;
                                     newStartTime = long.Parse(newValuesArray[1]);
                                     initialStartTime = infoAsWaitColor.startTime;
-                                    infoAsWaitColor.startTime = newStartTime;
                                     int newIndexToInsert = findIndexOfInsert(newStartTime);
+                                    infoAsWaitColor.startTime = newStartTime;
                                     if (newStartTime > initialStartTime)
                                     {
                                         handledMacro.Insert(newIndexToInsert, infoAsWaitColor);
@@ -824,8 +889,8 @@ namespace RecordNplay
                             }
                             break;
                         case WaitForImageEvent infoAsWaitImage:
-                            //"Image", Threshold, Image Name, Time, Image , Checkbox, X, Y
-                            newValuesArray = TextDialog.showChoosePic(infoAsWaitImage.threshold.ToString(),infoAsWaitImage.startTime.ToString(), infoAsWaitImage.imgName,infoAsWaitImage.img,infoAsWaitImage.click.ToString(), infoAsWaitImage.x.ToString(), infoAsWaitImage.y.ToString());
+                            //"Image", Threshold, Image Name, Time, Image , Checkbox, X, Y, clickType
+                            newValuesArray = TextDialog.showChoosePic(infoAsWaitImage.threshold.ToString(),infoAsWaitImage.startTime.ToString(), infoAsWaitImage.imgName,infoAsWaitImage.img,infoAsWaitImage.click.ToString(), infoAsWaitImage.x.ToString(), infoAsWaitImage.y.ToString(), infoAsWaitImage.clickType.ToString());
                             if (newValuesArray != null && float.TryParse(newValuesArray[1],out float givenThreshold) && 0 < givenThreshold && givenThreshold < 1 && newValuesArray[2].Length > 0 && newValuesArray[3].All(x => char.IsDigit(x)) && newValuesArray[4] != null)
                             {
                                 bool changed = false;
@@ -834,8 +899,8 @@ namespace RecordNplay
                                     changed = true;
                                     newStartTime = long.Parse(newValuesArray[3]);
                                     initialStartTime = infoAsWaitImage.startTime;
-                                    infoAsWaitImage.startTime = newStartTime;
                                     int newIndexToInsert = findIndexOfInsert(newStartTime);
+                                    infoAsWaitImage.startTime = newStartTime;
                                     if (newStartTime > initialStartTime)
                                     {
                                         handledMacro.Insert(newIndexToInsert, infoAsWaitImage);
@@ -862,6 +927,26 @@ namespace RecordNplay
                                     changed = true;
                                     infoAsWaitImage.img = newValuesArray[4];
                                 }
+                                if (newValuesArray[5] != infoAsWaitImage.click.ToString())
+                                {
+                                    changed = true;
+                                    infoAsWaitImage.click = !infoAsWaitImage.click;
+                                }
+                                if (int.Parse(newValuesArray[6]) != infoAsWaitImage.x)
+                                {
+                                    changed = true;
+                                    infoAsWaitImage.x = int.Parse(newValuesArray[6]);
+                                }
+                                if (int.Parse(newValuesArray[7]) != infoAsWaitImage.y)
+                                {
+                                    changed = true;
+                                    infoAsWaitImage.y= int.Parse(newValuesArray[7]);
+                                }
+                                if (newValuesArray[8] != infoAsWaitImage.clickType)
+                                {
+                                    changed = true;
+                                    infoAsWaitImage.clickType = newValuesArray[8];
+                                }
                                 if (changed) // only if we changed something we update the macro steps
                                 {
                                     showMacroSteps(handledMacro);
@@ -885,8 +970,8 @@ namespace RecordNplay
                                 {
                                     changed = true;
                                     newStartTime = long.Parse(newValuesArray[1]);
-                                    infoAsLoopEvent.startTime = newStartTime;
                                     int newIndexToInsert = findIndexOfInsert(newStartTime);
+                                    infoAsLoopEvent.startTime = newStartTime;
                                     if (newStartTime > initialStartTime)
                                     {
                                         handledMacro.Insert(newIndexToInsert, infoAsLoopEvent);
@@ -1148,6 +1233,7 @@ namespace RecordNplay
                         string imgName = info[2];                
                         startTime = int.Parse(info[3]);
                         string img = info[4];
+                        string typeOfClick = info[8];
                         //img = TextDialog.ByteStringToBitmap(info[3]);
                         insertIndex = findIndexOfInsert(startTime);
                         if (info[5] == "false")
@@ -1156,7 +1242,7 @@ namespace RecordNplay
                         }
                         else
                         {
-                            handledMacro.Insert(insertIndex, new WaitForImageEvent(startTime, img, threshold, imgName,true,int.Parse(info[6]),int.Parse(info[7])));
+                            handledMacro.Insert(insertIndex, new WaitForImageEvent(startTime, img, threshold, imgName,true,int.Parse(info[6]),int.Parse(info[7]),typeOfClick));
                         }
                         
                         

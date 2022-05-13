@@ -470,7 +470,9 @@ namespace RecordNplay
         private static Label widthTextLabel;
         private static Label heightTextLabel;
         private static Form choosePicPrompt;
-        public static string[] showChoosePic(string threshold, string startTime, string imgName, string image, string click, string x, string y)
+        private static TextBox xTextBox;
+        private static TextBox yTextBox;
+        public static string[] showChoosePic(string threshold, string startTime, string imgName, string image, string click, string x, string y, string clickType)
         {
             choosePicPrompt = new Form()
             {
@@ -490,10 +492,16 @@ namespace RecordNplay
             Label textLabel4 = new Label() { Left = 20, Top = 100, Text = "Click?" };
             CheckBox clickCheckbox = new CheckBox() { Left = 100, Top = 100 };
             Label xTextLabel = new Label() { Left = 20, Top = 130, Text = "X:"};
-            TextBox xTextBox = new TextBox() { Left = 100, Top = 130, Width = 100 };
+            xTextBox = new TextBox() { Left = 100, Top = 130, Width = 100 };
             Label yTextLabel = new Label() { Left = 20, Top = 160, Text = "Y:" };
-            TextBox yTextBox = new TextBox() { Left = 100, Top = 160, Width = 100 };
-            Label textLabel5 = new Label() { Left = 310, Top = 10, Text = "You can press PrintScreen to take pic" };
+            yTextBox = new TextBox() { Left = 100, Top = 160, Width = 100 };
+            Label clickTypeTextLabel = new Label() { Left = 20, Top = 190, Text = "ClickType" };
+            ComboBox clickTypeCombobox = new ComboBox() { Left = 100, Top = 190, DropDownStyle = ComboBoxStyle.DropDownList };
+            clickTypeCombobox.Items.Add("Left Click");
+            clickTypeCombobox.Items.Add("Double Click");
+            clickTypeCombobox.Items.Add("Right Click");
+            clickTypeCombobox.Items.Add("Middle Click");
+            Label textLabel5 = new Label() { Left = 310, Top = 10, Width= 150, Text = "You can press PrintScreen to take pic" };
             Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 130, DialogResult = DialogResult.OK };
             clickCheckbox.CheckedChanged += (sender, args) =>
             {
@@ -503,7 +511,9 @@ namespace RecordNplay
                     choosePicPrompt.Controls.Add(xTextLabel);
                     choosePicPrompt.Controls.Add(yTextBox);
                     choosePicPrompt.Controls.Add(yTextLabel);
-                    confirmation.Top += 60;
+                    choosePicPrompt.Controls.Add(clickTypeCombobox);
+                    choosePicPrompt.Controls.Add(clickTypeTextLabel);
+                    confirmation.Top += 90;
                 }
                 else
                 {
@@ -511,7 +521,9 @@ namespace RecordNplay
                     choosePicPrompt.Controls.Remove(xTextLabel);
                     choosePicPrompt.Controls.Remove(yTextBox);
                     choosePicPrompt.Controls.Remove(yTextLabel);
-                    confirmation.Top -= 60;
+                    choosePicPrompt.Controls.Remove(clickTypeCombobox);
+                    choosePicPrompt.Controls.Remove(clickTypeTextLabel);
+                    confirmation.Top -= 90;
                 }
             };
             if (click == "True")
@@ -520,6 +532,8 @@ namespace RecordNplay
                 choosePicPrompt.Controls.Add(xTextLabel);
                 choosePicPrompt.Controls.Add(yTextBox);
                 choosePicPrompt.Controls.Add(yTextLabel);
+                choosePicPrompt.Controls.Add(clickTypeCombobox);
+                choosePicPrompt.Controls.Add(clickTypeTextLabel);
                 clickCheckbox.Checked = true;
             }
             
@@ -529,7 +543,8 @@ namespace RecordNplay
                 Size = new Size(100, 100),
                 Left = 220,
                 Top = 40,
-                SizeMode = PictureBoxSizeMode.StretchImage
+                SizeMode = PictureBoxSizeMode.StretchImage,
+                BorderStyle = BorderStyle.Fixed3D
             };
             widthTextLabel = new Label() { Left = 220, Top = 170, Text = "Width:" };
             heightTextLabel = new Label() { Left = 220, Top = 200, Text = "Height:" };
@@ -542,9 +557,12 @@ namespace RecordNplay
             textBox3.Text = startTime;
             xTextBox.Text = x;
             yTextBox.Text = y;
+            clickTypeCombobox.Text = clickType;
             if (image != null) // we only show the picture if it's not null
             {
                 cropped.Image = ByteStringToBitmap(image);
+                widthTextLabel.Text = "Width: " + cropped.Image.Width.ToString();
+                heightTextLabel.Text = "Height: " + cropped.Image.Height.ToString();
             }
             confirmation.Click += (sender, e) => { choosePicPrompt.Close(); };
             choosePicPrompt.Controls.Add(clickCheckbox);
@@ -563,7 +581,7 @@ namespace RecordNplay
             choosePicPrompt.Controls.Add(cropped);
             choosePicPrompt.AcceptButton = confirmation;
             isInScreenshot = true;
-            string[] returnString = choosePicPrompt.ShowDialog() == DialogResult.OK ? new string[] { "Image", textBox1.Text, textBox2.Text, textBox3.Text, cropped.Image != null ? BitmapToByteString(new Bitmap(cropped.Image)) : null, clickCheckbox.Checked.ToString(), xTextBox.Text, yTextBox.Text } : null;
+            string[] returnString = choosePicPrompt.ShowDialog() == DialogResult.OK ? new string[] { "Image", textBox1.Text, textBox2.Text, textBox3.Text, cropped.Image != null ? BitmapToByteString(new Bitmap(cropped.Image)) : null, clickCheckbox.Checked.ToString(), xTextBox.Text, yTextBox.Text , clickTypeCombobox.Text} : null;
             isInScreenshot = false;
             return returnString;
         }
@@ -576,6 +594,8 @@ namespace RecordNplay
                 cropped.Image = img;
                 widthTextLabel.Text = "Width: " + cropped.Image.Width.ToString();
                 heightTextLabel.Text = "Height: " + cropped.Image.Height.ToString();
+                xTextBox.Text = (cropped.Image.Width / 2).ToString();
+                yTextBox.Text = (cropped.Image.Height / 2).ToString();
             }
             choosePicPrompt.BringToFront();
             takingScreenshot = false;
@@ -652,7 +672,7 @@ namespace RecordNplay
                 case "Loop":
                     return ShowLoopEdit("0", "1", "1");
                 case "Image":
-                    return showChoosePic("0.8", "0", "", null,"false","-1","-1");
+                    return showChoosePic("0.8", "0", "", null,"false","-1","-1","Left Click");
                 default: // if exit without choosing anything
                     return null;
             }
@@ -678,6 +698,55 @@ namespace RecordNplay
 
             return prompt.ShowDialog() == DialogResult.OK ? textBox1.Text : null;
         }
+
+        public static string showAppendListen()
+        {
+            Form prompt = new Form()
+            {
+                Width = 350,
+                Height = 180,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Choose from where to append",
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            Label textLabel1 = new Label() { Left = 20, Top = 10, Text = "StartTime:" };
+            TextBox textBox1 = new TextBox() { Left = 100, Top = 10, Width = 100 };
+            Button confirmation = new Button() { Text = "Ok", Left = 50, Width = 100, Top = 100, DialogResult = DialogResult.OK };
+            confirmation.Click += (sender, e) => { prompt.Close(); };
+            prompt.Controls.Add(textBox1);
+            prompt.Controls.Add(confirmation);
+            prompt.Controls.Add(textLabel1);
+            prompt.AcceptButton = confirmation;
+
+            return prompt.ShowDialog() == DialogResult.OK ? textBox1.Text : null;
+        }
+
+        public static string showExistingMacroListen()
+        {
+            Form prompt = new Form()
+            {
+                Width = 350,
+                Height = 180,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Warning",
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            string value = null;
+            Label textLabel1 = new Label() { Left = 20, Top = 10, 
+                Text = "Do you want to overide the ongoing macro or you want to append to it?" 
+            };
+            Button overideButton = new Button() { Text = "Overide", Left = 50, Width = 100, Top = 100, DialogResult = DialogResult.OK };
+            Button appendButton = new Button() { Text = "Append", Left = 170, Width = 100, Top = 100, DialogResult = DialogResult.OK };
+            overideButton.Click += (sender, e) => { value = "Overide"; prompt.Close(); };
+            appendButton.Click += (sender, e) => { value = "Append"; prompt.Close(); };
+            prompt.Controls.Add(appendButton);
+            prompt.Controls.Add(overideButton);
+            prompt.Controls.Add(textLabel1);
+            prompt.AcceptButton = appendButton;
+
+            return prompt.ShowDialog() == DialogResult.OK ? value : null;
+        }
+
         public static bool showYesNoDialog(string question,string title)
         {
             DialogResult dialogResult = MessageBox.Show(question, title, MessageBoxButtons.YesNo);

@@ -13,11 +13,19 @@ using System.Diagnostics;
 
 namespace RecordNplay
 {
+    /*public enum ClickType
+    {
+        LeftClick,
+        RightClick,
+        DoubleClick,
+        MiddleClick
+    }*/
     class WaitForImageEvent : MacroEvent
     {
         public int x;
         public int y;
         public bool click;
+        public string clickType;
         public string imgName; // for better display
         public string img; // saved that in purpose to be string because saving Bitmap with Newtonsoft dll is kinda bad
         public float threshold;
@@ -28,6 +36,7 @@ namespace RecordNplay
             this.img = null;
             this.threshold = -1;
             this.click = false;
+            this.clickType = "Left Click";
         }
         public WaitForImageEvent(int startTime, string img, float threshold, string imgName)
         {
@@ -36,8 +45,9 @@ namespace RecordNplay
             this.img = img;
             this.threshold = threshold;
             this.click = false;
+            this.clickType = "Left Click";
         }
-        public WaitForImageEvent(int startTime, string img, float threshold, string imgName,bool click, int x, int y)
+        public WaitForImageEvent(int startTime, string img, float threshold, string imgName,bool click, int x, int y, string clickType)
         {
             this.imgName = imgName;
             this.startTime = startTime;
@@ -46,6 +56,7 @@ namespace RecordNplay
             this.click = click;
             this.x = x;
             this.y = y;
+            this.clickType = clickType;
         }
         public override void activate()
         {
@@ -76,9 +87,32 @@ namespace RecordNplay
                     // before we exit we check if we need to click it
                     if (click)
                     {
-                        //when we found, we click on the image (middle of the image)
-                        MouseClicker.pressLeftMouse(maxLoc.X + x, maxLoc.Y + y);
-                        MouseClicker.leaveLeftMouse(maxLoc.X + x, maxLoc.Y + y);
+                        switch (clickType)
+                        {
+                            case "Left Click":
+                                //when we found, we click on the image (middle of the image)
+                                MouseClicker.pressLeftMouse(maxLoc.X + x, maxLoc.Y + y);
+                                MouseClicker.leaveLeftMouse(maxLoc.X + x, maxLoc.Y + y);
+                                break;
+                            case "Double Click":
+                                //when we found, we click on the image (middle of the image)
+                                MouseClicker.pressLeftMouse(maxLoc.X + x, maxLoc.Y + y);
+                                MouseClicker.leaveLeftMouse(maxLoc.X + x, maxLoc.Y + y);
+                                Thread.Sleep(100);
+                                MouseClicker.pressLeftMouse(maxLoc.X + x, maxLoc.Y + y);
+                                MouseClicker.leaveLeftMouse(maxLoc.X + x, maxLoc.Y + y);
+                                break;
+                            case "Right Click":
+                                MouseClicker.pressRightMouse(maxLoc.X + x, maxLoc.Y + y);
+                                MouseClicker.leaveRighttMouse(maxLoc.X + x, maxLoc.Y + y);
+                                break;
+                            case "Middle Click":
+                                MouseClicker.pressMiddleMouse(maxLoc.X + x, maxLoc.Y + y);
+                                MouseClicker.leaveMiddletMouse(maxLoc.X + x, maxLoc.Y + y);
+                                break;
+                            default:
+                                break;
+                        }
                     }
                     break;
                 }
